@@ -141,12 +141,37 @@ const GetStarted = ({ navigation }) => {
             textAlignment={'center'}
           />
 
+          <View style={{ height: 20 }} />
+
           <AppText
-            title={"The Pollen and Spore Season has ended in Canada for 2025. We'll return in early February for Victoria, Vancouver and Burnaby regions. The rest of Canada will resume in early to mid March. Please email us at info@aerobiology.ca if you have any questions. We really appreciate your support."}
+            title={"The Pollen and Spore Season has ended in Canada for 2025."}
             textColor={AppColors.WHITE}
-            textSize={2}
+            textSize={1.7}
             textAlignment={'center'}
           />
+
+          <AppText
+            title={"We'll return in early February for Victoria, Vancouver and Burnaby regions."}
+            textColor={AppColors.WHITE}
+            textSize={1.7}
+            textAlignment={'center'}
+          />
+
+          <AppText
+            title={"The rest of Canada will resume in early to mid March."}
+            textColor={AppColors.WHITE}
+            textSize={1.7}
+            textAlignment={'center'}
+          />
+
+          <AppText
+            title={"Please email us at info@aerobiology.ca if you have any questions. We really appreciate your support."}
+            textColor={AppColors.WHITE}
+            textSize={1.7}
+            textAlignment={'center'}
+          />
+
+
 
 
 
