@@ -1,136 +1,135 @@
-import {View, Text, FlatList, ScrollView, TouchableOpacity, SafeAreaView, StatusBar} from 'react-native';
+import { View, Text, FlatList, ScrollView, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
 import React from 'react';
 import AppHeader from '../../components/AppHeader';
 import AppText from '../../components/AppTextComps/AppText';
 import AppColors from '../../utils/AppColors';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import {responsiveFontSize} from '../../utils/Responsive_Dimensions';
+import { responsiveFontSize } from '../../utils/Responsive_Dimensions';
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
 import AppButton from '../../components/AppButton';
 import Entypo from 'react-native-vector-icons/Entypo'
 import { useSelector } from 'react-redux';
-const More = ({navigation}) => {
-    const userData = useSelector(state => state.auth.user);
-    const expiry = useSelector(state => state.auth.expireDate)
+const More = ({ navigation }) => {
+  const userData = useSelector(state => state.auth.user);
+  const expiry = useSelector(state => state.auth.expireDate)
 
-    // console.log('exipiry',expiry ? 'hello' : 'no')
+  // console.log('exipiry',expiry ? 'hello' : 'no')
 
-    
+
 
   const pollens = [
-    {id: 1, name: 'App Settings', top: true, onPress: ()=> navigation.navigate("AppSetting")},
-    {id: 2, name: 'Data Visualizer', onPress: ()=> navigation.navigate("Data Visualizer")},
-    {id: 3, name: 'Help', onPress: ()=> navigation.navigate("HelpScreen")},
-    {id: 4, name: 'Send Feedback', onPress: ()=> navigation.navigate("FeedBack")},
-    {id: 5, name: 'Account',bottom: true, onPress: ()=> navigation.navigate("Account")},
+    { id: 1, name: 'App Settings', top: true, onPress: () => navigation.navigate("AppSetting") },
+    { id: 2, name: 'Data Visualizer', onPress: () => navigation.navigate("Data Visualizer") },
+    { id: 3, name: 'Help', onPress: () => navigation.navigate("HelpScreen") },
+    { id: 4, name: 'Account', bottom: true, onPress: () => navigation.navigate("Account") },
 
   ];
 
   return (
-    <SafeAreaView style={{flex:1}}>
-      <StatusBar  barStyle={'dark-content'}/> 
-    <View style={{padding: 20}}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <AppHeader heading="More" icon={<Entypo name={"location-pin"} size={responsiveFontSize(2.5)} color={AppColors.BTNCOLOURS}/>}/>
+    <SafeAreaView style={{ flex: 1 }}>
+      <StatusBar barStyle={'dark-content'} />
+      <View style={{ padding: 20 }}>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <AppHeader heading="More" icon={<Entypo name={"location-pin"} size={responsiveFontSize(2.5)} color={AppColors.BTNCOLOURS} />} />
 
-        <View style={{flexDirection: 'row', gap: 20, alignItems: 'center'}}>
-          <AppText title={`Name: ${userData?.user_name}`} textSize={2} />
-          <AppText title={'App Version: 5.9.8'} textSize={2} />
-        </View>
+          <View style={{ flexDirection: 'row', gap: 20, alignItems: 'center' }}>
+            <AppText title={`Name: ${userData?.user_name}`} textSize={2} />
+            <AppText title={'App Version: 5.9.8'} textSize={2} />
+          </View>
 
-        <View
-          style={{
-            padding: 10,
-            backgroundColor: '#3D56F0',
-            borderRadius: 10,
-            marginTop: 20,
-            marginBottom: 20,
-          }}>
-          <AppText
-            title={`Subscription Status: ${expiry ? 'Premium' : 'Free'}`}
-            textColor={AppColors.WHITE}
-            textSize={2}
-            textFontWeight
-          />
-        </View>
+          <View
+            style={{
+              padding: 10,
+              backgroundColor: '#3D56F0',
+              borderRadius: 10,
+              marginTop: 20,
+              marginBottom: 20,
+            }}>
+            <AppText
+              title={`Subscription Status: ${expiry ? 'Premium' : 'Free'}`}
+              textColor={AppColors.WHITE}
+              textSize={2}
+              textFontWeight
+            />
+          </View>
 
-        <View style={{marginBottom: 20}}>
-          <FlatList
-            data={pollens}
-            renderItem={({item}) => {
-              return (
-                <TouchableOpacity
-                  onPress={item.onPress}
-                  activeOpacity={0.8}
-                  style={{
-                    borderWidth: 1, 
-                    borderTopRightRadius: item.top ? 10 : 0,
-                    borderTopLeftRadius: item.top ? 10 : 0,
-                    borderBottomRightRadius: item.bottom ? 10 : 0,
-                    borderBottomLeftRadius: item.bottom ? 10 : 0,
-                    paddingVertical: 20,
-                    paddingHorizontal:10,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    borderBottomWidth: item.bottom ? 1 : 0,
-                  }}>
-                  <View
+          <View style={{ marginBottom: 20 }}>
+            <FlatList
+              data={pollens}
+              renderItem={({ item }) => {
+                return (
+                  <TouchableOpacity
+                    onPress={item.onPress}
+                    activeOpacity={0.8}
                     style={{
+                      borderWidth: 1,
+                      borderTopRightRadius: item.top ? 10 : 0,
+                      borderTopLeftRadius: item.top ? 10 : 0,
+                      borderBottomRightRadius: item.bottom ? 10 : 0,
+                      borderBottomLeftRadius: item.bottom ? 10 : 0,
+                      paddingVertical: 20,
+                      paddingHorizontal: 10,
                       flexDirection: 'row',
-                      gap: 10,
                       alignItems: 'center',
+                      justifyContent: 'space-between',
+                      borderBottomWidth: item.bottom ? 1 : 0,
                     }}>
-                    <AppText
-                      title={item.name}
-                      textSize={2}
-                      textColor={AppColors.BLACK}
-                      textFontWeight
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        gap: 10,
+                        alignItems: 'center',
+                      }}>
+                      <AppText
+                        title={item.name}
+                        textSize={2}
+                        textColor={AppColors.BLACK}
+                        textFontWeight
+                      />
+                    </View>
+
+                    <FontAwesome6
+                      name={'circle-arrow-right'}
+                      size={responsiveFontSize(2.5)}
+                      color={'#032198'}
                     />
-                  </View>
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </View>
 
-                  <FontAwesome6
-                    name={'circle-arrow-right'}
-                    size={responsiveFontSize(2.5)}
-                    color={'#032198'}
-                  />
-                </TouchableOpacity>
-              );
-            }}
+          <AppButton
+            title={'Forecast explanation'}
+            bgColor={AppColors.BTNCOLOURS}
+            RightColour={'#3D56F0'}
+            handlePress={() => navigation.navigate("ForcastExplaination")}
           />
-        </View>
 
-        <AppButton
-          title={'Forecast explanation'}
-          bgColor={AppColors.BTNCOLOURS}
-          RightColour={'#3D56F0'}
-          handlePress={()=> navigation.navigate("ForcastExplaination")}
-        />
-
-        <View
-          style={{
-            flexDirection: 'row',
-            marginTop: 10,
-            justifyContent: 'space-between',
-          }}>
-            <TouchableOpacity onPress={()=> navigation.navigate("PrivacyPolicy")}>
-          <AppText
-            title={'Privacy Policy'}
-            textColor={AppColors.BLACK}
-            textSize={1.5}
-            />
+          <View
+            style={{
+              flexDirection: 'row',
+              marginTop: 10,
+              justifyContent: 'space-between',
+            }}>
+            <TouchableOpacity onPress={() => navigation.navigate("PrivacyPolicy")}>
+              <AppText
+                title={'Privacy Policy'}
+                textColor={AppColors.BLACK}
+                textSize={1.5}
+              />
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={()=> navigation.navigate("TermsCondition")}>
-          <AppText
-            title={'Terms & Conditions'}
-            textColor={AppColors.BLACK}
-            textSize={1.5}
-            />
+            <TouchableOpacity onPress={() => navigation.navigate("TermsCondition")}>
+              <AppText
+                title={'Terms & Conditions'}
+                textColor={AppColors.BLACK}
+                textSize={1.5}
+              />
             </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </View>
+          </View>
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };

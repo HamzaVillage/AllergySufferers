@@ -12,8 +12,9 @@ import {
   Image,
   Platform,
   StatusBar,
+  TextInput,
 } from 'react-native';
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import AppHeader from '../../../components/AppHeader';
 // import {BarChart, LineChart} from 'react-native-chart-kit';
 import AppColors from '../../../utils/AppColors';
@@ -26,7 +27,7 @@ import AppText from '../../../components/AppTextComps/AppText';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import BASE_URL from '../../../utils/BASE_URL';
-import {useDispatch, useSelector} from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import moment from 'moment';
 import DatePicker from 'react-native-date-picker';
@@ -42,18 +43,18 @@ import SubscribeBar from '../../../components/SubscribeBar';
 import GetAllLocation from '../../../global/GetAllLocation';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {ApiCallWithUserId} from '../../../global/ApiCall';
+import { ApiCallWithUserId } from '../../../global/ApiCall';
 import {
   addUnitToActiveMedicaton,
   removeUnitToActiveMedicaton,
   setActiveCity,
   setActiveMedication,
 } from '../../../redux/Slices/MedicationSlice';
-import {useFocusEffect} from '@react-navigation/native';
-import Svg, {Circle, G, Line, Polyline, Rect} from 'react-native-svg';
+import { useFocusEffect } from '@react-navigation/native';
+import Svg, { Circle, G, Line, Polyline, Rect } from 'react-native-svg';
 import SvgDashLine from '../../../components/SvgDashLine';
 
-const DatavisualizerSample = ({navigation}) => {
+const DatavisualizerSample = ({ navigation }) => {
   const dispatch = useDispatch();
 
   const userData = useSelector(state => state?.auth?.user);
@@ -113,6 +114,7 @@ const DatavisualizerSample = ({navigation}) => {
   const [activeDate, setActiveDate] = useState(null);
 
   const [savingDataLoader, setSavingDataLoader] = useState(false);
+  const [searchText, setSearchText] = useState('');
 
   useEffect(() => {
     const nav = navigation.addListener('focus', () => {
@@ -193,7 +195,7 @@ const DatavisualizerSample = ({navigation}) => {
       );
 
       if (getActiveMedicationData?.entries?.items?.length > 0) {
-        
+
         dispatch(setActiveMedication(getActiveMedicationData?.entries?.items));
         setSavingDataLoader(false);
       } else {
@@ -212,7 +214,7 @@ const DatavisualizerSample = ({navigation}) => {
       method: 'get',
       maxBodyLength: Infinity,
       url: `${BASE_URL}/allergy_data/v1/user/${userData?.id}/get_all_allergens`,
-      headers: {'Cache-Control': 'no-cache', Pragma: 'no-cache', Expires: '0'},
+      headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache', Expires: '0' },
     };
 
     axios
@@ -425,36 +427,33 @@ const DatavisualizerSample = ({navigation}) => {
     const pickLat = city
       ? city?.lat
       : activeCity
-      ? activeCity.lat
-      : AllCities[0]?.lat;
+        ? activeCity.lat
+        : AllCities[0]?.lat;
     const pickLng = city
       ? city?.lng
       : activeCity
-      ? activeCity.lng
-      : AllCities[0]?.lng;
+        ? activeCity.lng
+        : AllCities[0]?.lng;
 
     const config = {
       method: 'post',
       maxBodyLength: Infinity,
-      url: `${BASE_URL}/allergy_data/v1/user/${
-        userData?.id
-      }/data_visualizer?lat=${
-        activeCityLocalState
+      url: `${BASE_URL}/allergy_data/v1/user/${userData?.id
+        }/data_visualizer?lat=${activeCityLocalState
           ? activeCityLocalState?.lat
           : city
-          ? city?.lat
-          : activeCity
-          ? activeCity.lat
-          : AllCities[0]?.lat
-      }&lng=${
-        activeCityLocalState
+            ? city?.lat
+            : activeCity
+              ? activeCity.lat
+              : AllCities[0]?.lat
+        }&lng=${activeCityLocalState
           ? activeCityLocalState?.lng
           : city
-          ? city?.lng
-          : activeCity
-          ? activeCity.lng
-          : AllCities[0]?.lng
-      }&start_date=${dateis}&${allergenParams}`,
+            ? city?.lng
+            : activeCity
+              ? activeCity.lng
+              : AllCities[0]?.lng
+        }&start_date=${dateis}&${allergenParams}`,
       headers: {
         'Cache-Control': 'no-cache',
         Pragma: 'no-cache',
@@ -470,7 +469,7 @@ const DatavisualizerSample = ({navigation}) => {
         const chartLineData = {};
         Object.keys(apiData).forEach(key => {
           if (key !== 'dates' && key !== 'symptom_level') {
-            chartLineData[key] = apiData[key].map(val => ({value: val}));
+            chartLineData[key] = apiData[key].map(val => ({ value: val }));
           }
         });
 
@@ -767,7 +766,7 @@ const DatavisualizerSample = ({navigation}) => {
     5: AppImages.Bored,
   };
 
-  const NewPro = [{value: 0}, {value: 2}, {value: 3}];
+  const NewPro = [{ value: 0 }, { value: 2 }, { value: 3 }];
 
   // Chart height in px (same as <Svg height>)
   const chartHeight = 200;
@@ -817,13 +816,13 @@ const DatavisualizerSample = ({navigation}) => {
   }));
 
   return (
-    <SafeAreaView style={{flex: 1, backgroundColor: AppColors.WHITE}}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: AppColors.WHITE }}>
       <ScrollView
         contentContainerStyle={{
           padding: 20,
           flexGrow: 1,
           backgroundColor: AppColors.WHITE,
-          paddingBottom: 200,
+          paddingBottom: 400,
           // paddingBottom: insets.bottom + 40,
         }}>
         <AppHeader
@@ -859,7 +858,7 @@ const DatavisualizerSample = ({navigation}) => {
                 />
 
                 <TouchableOpacity
-                  style={{padding: 20}}
+                  style={{ padding: 20 }}
                   onPress={() => getSelectedAllergens(activeCity)}>
                   <Ionicons
                     name="reload"
@@ -891,31 +890,31 @@ const DatavisualizerSample = ({navigation}) => {
                 }}>
                 {MedicationnRecord?.length > 0 ? (
                   <View style={{}}>
-                    <View style={{minHeight: responsiveHeight(30), width:responsiveWidth(100),  position:'absolute', gap:1.5}}>
-                      <SvgDashLine/>
-                      <SvgDashLine/>
-                      <SvgDashLine/>
-                      <SvgDashLine/>
-                      <SvgDashLine/>
-                      <SvgDashLine/>
-                      <SvgDashLine/>
-                      <SvgDashLine/>
-                      <SvgDashLine/>
+                    <View style={{ minHeight: responsiveHeight(30), width: responsiveWidth(100), position: 'absolute', gap: 1.5 }}>
+                      <SvgDashLine />
+                      <SvgDashLine />
+                      <SvgDashLine />
+                      <SvgDashLine />
+                      <SvgDashLine />
+                      <SvgDashLine />
+                      <SvgDashLine />
+                      <SvgDashLine />
+                      <SvgDashLine />
                       <Svg height={22} width="100%">
-            <Line
-              x1="0"
-              y1="10"
-              x2="100%"
-              y2="10"
-              stroke="black"
-              strokeWidth="2"
-              
-            />
-          </Svg>
+                        <Line
+                          x1="0"
+                          y1="10"
+                          x2="100%"
+                          y2="10"
+                          stroke="black"
+                          strokeWidth="2"
+
+                        />
+                      </Svg>
                     </View>
                     <ScrollView
                       contentContainerStyle={{}}
-                      style={{marginLeft: 10}}
+                      style={{ marginLeft: 10 }}
                       horizontal={true}>
                       <View
                         style={{
@@ -973,7 +972,7 @@ const DatavisualizerSample = ({navigation}) => {
                             marginBottom: 20,
                             marginLeft: responsiveWidth(3.5),
                           }}
-                          renderItem={({item}) => (
+                          renderItem={({ item }) => (
                             <View
                               style={{
                                 width: responsiveWidth(29), // fixed slot per day
@@ -1021,9 +1020,9 @@ const DatavisualizerSample = ({navigation}) => {
                             marginLeft: responsiveWidth(3),
                           }}
                           horizontal
-                          renderItem={({item, index}) => {
+                          renderItem={({ item, index }) => {
                             return (
-                              <View style={{width: responsiveWidth(30)}}>
+                              <View style={{ width: responsiveWidth(30) }}>
                                 <AppText title={item.label} textSize={2} />
                               </View>
                             );
@@ -1274,13 +1273,13 @@ const DatavisualizerSample = ({navigation}) => {
               </View>
             )}
 
-            <View style={{gap: 20}}>
+            <View style={{ gap: 20 }}>
               <View>
                 <AppText title={'Allergens'} textSize={2} textFontWeight />
                 <FlatList
                   data={takingMedications}
                   keyExtractor={item => item?.id?.toString()}
-                  renderItem={({item, index}) => (
+                  renderItem={({ item, index }) => (
                     <View
                       style={{
                         minHeight: responsiveHeight(5),
@@ -1293,7 +1292,7 @@ const DatavisualizerSample = ({navigation}) => {
                         marginTop: 5,
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        alignSelf:'center',
+                        alignSelf: 'center',
                         paddingRight: 0,
                         paddingLeft: 5,
                         borderWidth: 1,
@@ -1305,7 +1304,7 @@ const DatavisualizerSample = ({navigation}) => {
                       />
 
                       {loadingItemId == item?.id ? (
-                        <View style={{paddingRight: 20}}>
+                        <View style={{ paddingRight: 20 }}>
                           <ActivityIndicator
                             size={'large'}
                             color={AppColors.WHITE}
@@ -1335,7 +1334,7 @@ const DatavisualizerSample = ({navigation}) => {
               </View>
 
               {activeCity && (
-                <View style={{gap: 10}}>
+                <View style={{ gap: 10 }}>
                   <AppText title={'City'} textSize={2} textFontWeight />
                   <View
                     style={{
@@ -1356,8 +1355,8 @@ const DatavisualizerSample = ({navigation}) => {
                         activeCityLocalState
                           ? activeCityLocalState?.city_name
                           : activeCity?.city_name
-                          ? activeCity?.city_name
-                          : AllCities[0]?.city_name
+                            ? activeCity?.city_name
+                            : AllCities[0]?.city_name
                       }
                       textSize={2}
                       textFontWeight
@@ -1444,19 +1443,19 @@ const DatavisualizerSample = ({navigation}) => {
                   marginTop: 10,
                   paddingVertical: 12,
                 }}
-                // style={{
-                //   height: responsiveHeight(5),
-                //   width: responsiveWidth(90),
-                //   borderWidth: 1,
-                //   borderRadius: 10,
-                //   alignItems: 'center',
-                //   justifyContent: 'center',
-                //   backgroundColor:
-                //     type == 'Add Location'
-                //       ? AppColors.BTNCOLOURS
-                //       : AppColors.WHITE,
-                //   marginTop: 10,
-                // }}
+              // style={{
+              //   height: responsiveHeight(5),
+              //   width: responsiveWidth(90),
+              //   borderWidth: 1,
+              //   borderRadius: 10,
+              //   alignItems: 'center',
+              //   justifyContent: 'center',
+              //   backgroundColor:
+              //     type == 'Add Location'
+              //       ? AppColors.BTNCOLOURS
+              //       : AppColors.WHITE,
+              //   marginTop: 10,
+              // }}
               >
                 <AppText
                   title={'Change Location'}
@@ -1470,7 +1469,7 @@ const DatavisualizerSample = ({navigation}) => {
             </View>
 
             {pollenLoader && (
-              <View style={{marginTop: 30}}>
+              <View style={{ marginTop: 30 }}>
                 <ActivityIndicator size={'large'} color={AppColors.BLACK} />
               </View>
             )}
@@ -1485,7 +1484,7 @@ const DatavisualizerSample = ({navigation}) => {
                     marginTop: 20,
                     marginBottom: 20,
                   }}
-                  renderItem={({item}) => {
+                  renderItem={({ item }) => {
                     return (
                       <View
                         style={{
@@ -1548,11 +1547,53 @@ const DatavisualizerSample = ({navigation}) => {
               </View>
             ) : type == 'allergens' ? (
               <View>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: AppColors.WHITE,
+                    borderWidth: 1,
+                    borderColor: AppColors.LIGHTGRAY,
+                    borderRadius: 10,
+                    paddingHorizontal: 10,
+                    marginBottom: 10,
+                    height: responsiveHeight(6),
+                    marginTop: 10
+                  }}>
+                  <Ionicons
+                    name="search"
+                    size={responsiveFontSize(2.5)}
+                    color={AppColors.LIGHTGRAY}
+                  />
+                  <TextInput
+                    style={{
+                      flex: 1,
+                      marginLeft: 10,
+                      color: AppColors.BLACK,
+                      fontSize: responsiveFontSize(2),
+
+                    }}
+                    placeholder="Search Allergens..."
+                    placeholderTextColor={AppColors.LIGHTGRAY}
+                    value={searchText}
+                    onChangeText={setSearchText}
+                  />
+                </View>
                 <FlatList
-                  data={todayPollensData?.sort((a, b) =>
-                    a.common_name.localeCompare(b.common_name),
-                  )}
-                  renderItem={({item}) => {
+                  data={todayPollensData
+                    ?.filter(
+                      item =>
+                        item.common_name
+                          ?.toLowerCase()
+                          .includes(searchText.toLowerCase()) ||
+                        item.name
+                          ?.toLowerCase()
+                          .includes(searchText.toLowerCase()),
+                    )
+                    ?.sort((a, b) =>
+                      a.common_name.localeCompare(b.common_name),
+                    )}
+                  renderItem={({ item }) => {
                     return (
                       <TouchableOpacity
                         onPress={() =>
@@ -1580,7 +1621,11 @@ const DatavisualizerSample = ({navigation}) => {
                           size={responsiveFontSize(2.5)}
                           color={AppColors.BTNCOLOURS}
                         />
-                        <AppText title={item.common_name} textSize={1.5} />
+                        <View>
+
+                          <AppText title={item.common_name} textSize={1.5} />
+                          <AppText title={item.name} textSize={1.5} />
+                        </View>
                       </TouchableOpacity>
                     );
                   }}
@@ -1590,7 +1635,7 @@ const DatavisualizerSample = ({navigation}) => {
               <View>
                 <FlatList
                   data={AllCities}
-                  renderItem={({item}) => {
+                  renderItem={({ item }) => {
                     return (
                       <TouchableOpacity
                         onPress={() => SelectLocation(item)}
@@ -1613,6 +1658,7 @@ const DatavisualizerSample = ({navigation}) => {
                         />
 
                         <AppText title={item.city_name} textSize={1.5} />
+
                       </TouchableOpacity>
                     );
                   }}
@@ -1621,7 +1667,7 @@ const DatavisualizerSample = ({navigation}) => {
             )}
           </>
         ) : (
-          <View style={{justifyContent: 'center', marginTop: 20}}>
+          <View style={{ justifyContent: 'center', marginTop: 20 }}>
             <SubscribeBar
               title="Subscribe now to correlate pollen and spore levels with medication and symptoms"
               title2={
