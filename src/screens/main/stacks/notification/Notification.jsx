@@ -23,16 +23,13 @@ import Toast from 'react-native-toast-message';
 // import MaterialDesignIcons from 'react-native-vector-icons/MaterialDesignIcons'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import AppButton from '../../../../components/AppButton';
-
 const Notification = ({navigation}) => {
   const userData = useSelector(state => state?.auth?.user);
   const expireDate = useSelector(state => state?.auth?.expireDate);
   const allMyCity = useSelector(state => state?.medications?.allMyCity);
-
   const [allPollens, setALlPollens] = useState([]);
   const [search, setSearch] = useState('');
   const [loader, setLoader] = useState(false);
-
   const [NotificationLoader, setNotificationLoader] = useState(false);
   const [AllNotification, setAllNotification] = useState([]);
   const [PollenLoader, setPollenApiLoader] = useState(false);
@@ -43,10 +40,8 @@ const Notification = ({navigation}) => {
       }
       getNewNotification();
     });
-
     return nav;
   }, [navigation]);
-
   const getAllPollens = () => {
     setLoader(true);
     let config = {
@@ -55,7 +50,6 @@ const Notification = ({navigation}) => {
       url: `${BASE_URL}/allergy_data/v1/user/get_allergy_data`,
       headers: {},
     };
-
     axios
       .request(config)
       .then(response => {
@@ -67,14 +61,12 @@ const Notification = ({navigation}) => {
         setLoader(false);
       });
   };
-
   const setNewNotification = (item, level) => {
     setNotificationLoader(true);
     let data = JSON.stringify({
       level: level ? level : 1,
-      scientific_name: item.name,
+      scientific_name: item.name == "Total Pollen" ? "Average" : item.name,
     });
-
     let config = {
       method: 'post',
       maxBodyLength: Infinity,
@@ -84,7 +76,6 @@ const Notification = ({navigation}) => {
       },
       data: data,
     };
-
     axios
       .request(config)
       .then(response => {
@@ -101,29 +92,25 @@ const Notification = ({navigation}) => {
         setNotificationLoader(false);
       });
   };
-
   const getNewNotification = item => {
     setNotificationLoader(true);
+    console.log("userData?.id",userData?.id)
     let config = {
       method: 'post',
       maxBodyLength: Infinity,
       url: `${BASE_URL}/allergy_data/v1/user/${userData?.id}/get_notifications`,
       headers: {},
     };
-
     axios
       .request(config)
       .then(response => {
         console.log(JSON.stringify(response.data));
-
         const objectConvertArr = Object.entries(response.data.data).map(
           ([key, value]) => {
             return {name: key, count: value};
           },
         );
-
         setAllNotification(objectConvertArr);
-
         setNotificationLoader(false);
       })
       .catch(error => {
@@ -131,17 +118,14 @@ const Notification = ({navigation}) => {
         setNotificationLoader(false);
       });
   };
-
   const deleteNotification = item => {
     setNotificationLoader(true);
-
     let config = {
       method: 'post',
       maxBodyLength: Infinity,
       url: `https://www.allergysufferers.ca/wp-json/allergy_data/v1/user/${userData?.id}/remove_notification?scientific_name=${item.name}`,
       headers: {},
     };
-
     axios
       .request(config)
       .then(response => {
@@ -153,23 +137,19 @@ const Notification = ({navigation}) => {
         setNotificationLoader(false);
       });
   };
-
   const freeUserNotifications = [
     {id: 1, name: 'Total Spores'},
     {id: 2, name: 'Total Trees'},
     {id: 3, name: 'Total Grasses'},
     {id: 4, name: 'Total Weeds'},
+    {id: 5, name: 'Total Pollen'},
   ];
-
   // console.log('all pollens list =====>', allPollens)
-
   return (
     <View style={{padding: 20}}>
       <AppHeader heading="Push Notification" goBack={true} />
-
       {/* <FlatList
     data={[]}
-    
     /> */}
       <ScrollView
         contentContainerStyle={{flexGrow: 1, paddingBottom: 200}}
@@ -204,7 +184,7 @@ const Notification = ({navigation}) => {
                         justifyContent: 'space-between',
                       }}>
                       {/* Main Title */}
-                      <AppText title={item.name} textSize={2} textFontWeight />
+                      <AppText title={item.name == "Average" ? "Total Pollen" : item.name } textSize={2} textFontWeight />
                       <TouchableOpacity
                         onPress={() => deleteNotification(item)}>
                         <MaterialIcons
@@ -214,7 +194,6 @@ const Notification = ({navigation}) => {
                         />
                       </TouchableOpacity>
                     </View>
-
                     {/* Horizontal FlatList inside each notification */}
                     <FlatList
                       horizontal
@@ -257,23 +236,19 @@ const Notification = ({navigation}) => {
             />
           </View>
         )}
-
         <View style={{marginTop: 20}} />
-
         <AppTextInput
           inputPlaceHolder={'Search Pollens'}
           textInput={true}
           onChangeText={res => setSearch(res)}
           value={search}
         />
-
         {loader && (
           <View
             style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
             <ActivityIndicator size={'large'} color={AppColors.BLACK} />
           </View>
         )}
-
         {PollenLoader && (
           <View
             style={{
@@ -324,7 +299,6 @@ const Notification = ({navigation}) => {
                     />
                   )}
                 </View>
-
                 <View>
                   <AntDesign
                     name={'pluscircle'}
@@ -335,11 +309,25 @@ const Notification = ({navigation}) => {
               </TouchableOpacity>
             ))}
         </View>
-
         <Toast />
       </ScrollView>
     </View>
   );
 };
-
 export default Notification;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

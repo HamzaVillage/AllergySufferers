@@ -475,11 +475,11 @@ const Home = ({navigation}) => {
 
   const settingData = SettingHeaders();
 
-  const freeData = [
-    {id: 1, name: 'Total Spores', value: todayPollensData?.total_spores},
-    {id: 2, name: 'Total Trees', value: todayPollensData?.total_trees},
-    {id: 3, name: 'Total Grasses', value: todayPollensData?.total_grasses},
-    {id: 4, name: 'Total Weeds', value: todayPollensData?.total_weeds},
+const freeData = [
+    {id: 1, name: 'Total Spores', value: todayPollensData?.total_spores, type: "spore"},
+    {id: 2, name: 'Total Trees', value: todayPollensData?.total_trees, type: "pollen"},
+    {id: 3, name: 'Total Grasses', value: todayPollensData?.total_grasses, type: "pollen"},
+    {id: 4, name: 'Total Weeds', value: todayPollensData?.total_weeds, type: "pollen"},
   ];
 
   const setForcastLocal = isExistInArray => {
@@ -885,7 +885,7 @@ const Home = ({navigation}) => {
                                         ? 'Very High'
                                         : 'None'
                                     }
-                                    isPollenorSpores={'spore'}
+                                    isPollenorSpores={item.type}
                                     TempreaturePriorityFontSize={1.6}
                                   />
                                 </View>
@@ -1420,7 +1420,7 @@ const Home = ({navigation}) => {
                               const FuturefreeData = [
                                 {
                                   id: 0,
-                                  name: 'Accumulated Pollen',
+                                  name: 'Total Pollen',
                                   value: item?.average,
                                 },
                                 {
