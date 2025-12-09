@@ -81,6 +81,8 @@ const Home = ({navigation}) => {
   const userData = useSelector(state => state?.auth?.user);
   const AllCities = useSelector(state => state?.medications?.allMyCity);
   const subscriptionType = useSelector(state => state?.auth?.SubscriptionType);
+  const transactionId = useSelector(state => state?.auth?.transactionId);
+  const transactionDate = useSelector(state => state?.auth?.transactionDate);
   const subscriptionExpire = useSelector(state => state?.auth?.expireDate);
 
   // console.log("AllForcast", AllForcast?.length)
@@ -137,6 +139,8 @@ const Home = ({navigation}) => {
 
   const [message, setMessage] = useState('');
 
+  console.log('allForeCast===>',AllForcast)
+
   useEffect(() => {
     if (expireDate) {
       if (LoggedIn) {
@@ -186,6 +190,7 @@ const Home = ({navigation}) => {
     axios
       .request(config)
       .then(response => {
+        // console.log('active pollen',activePollen)
         setActivePollen(response.data.data);
         setActiveLoader(false);
       })
@@ -223,6 +228,8 @@ const Home = ({navigation}) => {
       AllForcast[newindex]?.forecast[userLocation]?.today?.date_label;
     const currentDatet = moment().local().format('MMMM Do, YYYY');
 
+    // console.log('local save date',LocalSavedUserDate)
+    // console.log('current date',currentDatet)
     if (LocalSavedUserDate == currentDatet) {
       if (AllForcast.length > 0) {
         const isExistInArray = AllForcast?.filter(
@@ -411,11 +418,19 @@ const Home = ({navigation}) => {
   };
 
   const SubscribeSubscription = async () => {
-    if (subscriptionType) {
+    if (subscriptionType && transactionId) {
       const subscribeApi = await SubscribeNow(
-        subscriptionType == 'premium_monthly' ? 'monthly' : 'yearly',
+        subscriptionType == 'premium_monthly' || 'allergy_month'
+          ? 'monthly'
+          : 'yearly',
         userData?.id,
+        transactionId,
+        transactionDate,
       );
+
+      //  alert('hello')
+
+      // console.log('subscribe api response ===>',subscribeApi)
 
       dispatch(
         setSubscription({
@@ -469,29 +484,29 @@ const Home = ({navigation}) => {
 
   const settingData = SettingHeaders();
 
-  const freeData = [
+const freeData = [
     {
       id: 1,
       name: 'Total Spores',
-      value: todayPollensData?.total_spores,
+      value: todayPollensData?.total_spores, type: "spore",
       type: 'spore',
     },
     {
       id: 2,
       name: 'Total Trees',
-      value: todayPollensData?.total_trees,
+      value: todayPollensData?.total_trees, type: "pollen",
       type: 'pollen',
     },
     {
       id: 3,
       name: 'Total Grasses',
-      value: todayPollensData?.total_grasses,
+      value: todayPollensData?.total_grasses, type: "pollen",
       type: 'pollen',
     },
     {
       id: 4,
       name: 'Total Weeds',
-      value: todayPollensData?.total_weeds,
+      value: todayPollensData?.total_weeds, type: "pollen",
       type: 'pollen',
     },
   ];
@@ -1792,6 +1807,6 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: responsiveWidth(100),
+    width: '100%'
   },
 });

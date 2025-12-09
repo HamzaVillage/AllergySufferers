@@ -1,17 +1,23 @@
-import { View, Text, FlatList, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native'
-import React, { useState } from 'react'
-import AppHeader from '../../../components/AppHeader'
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  SafeAreaView,
+  ActivityIndicator,
+} from 'react-native';
+import React, {useState} from 'react';
+import AppHeader from '../../../components/AppHeader';
 import AppText from '../../../components/AppTextComps/AppText';
-import { responsiveFontSize } from '../../../utils/Responsive_Dimensions';
-import FontAwesome6 from 'react-native-vector-icons/FontAwesome6'
+import {responsiveFontSize} from '../../../utils/Responsive_Dimensions';
+import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
 import AppColors from '../../../utils/AppColors';
-import { useDispatch, useSelector } from 'react-redux';
-import { setLogout } from '../../../redux/Slices/AuthSlice';
-import { deleteAllData } from '../../../redux/Slices/MedicationSlice';
-import { clearForaCastSlive } from '../../../redux/Slices/ForecastSlice';
-import { ApiCallWithUserId } from '../../../global/ApiCall';
+import {useDispatch, useSelector} from 'react-redux';
+import {setLogout} from '../../../redux/Slices/AuthSlice';
+import {deleteAllData} from '../../../redux/Slices/MedicationSlice';
+import {clearForaCastSlive} from '../../../redux/Slices/ForecastSlice';
+import {ApiCallWithUserId} from '../../../global/ApiCall';
 const AppSetting = ({ navigation }) => {
-
   const userData = useSelector(state => state?.auth?.user);
   const [loader, setLoader] = useState()
 
@@ -94,7 +100,7 @@ const AppSetting = ({ navigation }) => {
 
       </View>
     </SafeAreaView>
-  )
-}
+  );
+};
 
-export default AppSetting
+export default AppSetting;

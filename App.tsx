@@ -54,28 +54,31 @@ import { responsiveWidth } from './src/utils/Responsive_Dimensions';
 import NetInfo from '@react-native-community/netinfo'
 import AppText from './src/components/AppTextComps/AppText';
 import mobileAds from 'react-native-google-mobile-ads';
+// import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+
 
 const App = () => {
   const [isInternetConnected, settInterenetConnected] = useState(true)
 
 
+
   mobileAds()
-  .initialize()
-  .then(() => {
-    console.log('AdMob initialized');
-  })
+    .initialize()
+    .then(() => {
+      console.log('AdMob initialized');
+    })
   useEffect(() => {
     // Create channel on start
     async function setup() {
       // if (Platform.OS === 'android') {
-        await notifee.requestPermission();
-        await notifee.createChannel({
-          id: 'default',
-          name: 'Default Channel',
-          importance: 4, // HIGH
-        });
-     
-    } 
+      await notifee.requestPermission();
+      await notifee.createChannel({
+        id: 'default',
+        name: 'Default Channel',
+        importance: 4, // HIGH
+      });
+
+    }
     setup();
   }, []);
 
@@ -101,41 +104,56 @@ const App = () => {
 
 
 
-  
-    useEffect(() => {
-      const unsubscribe = NetInfo.addEventListener(state => {
-        // dispatch(setInternet(state.isConnected))
-          // console.log("is",state.isConnected)
-          settInterenetConnected(state.isConnected)
-        // setIsConnected(state.isConnected);
-      });
-  
-      return () => {
-        unsubscribe();
-      };
-    }, []);
-  
+
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      // dispatch(setInternet(state.isConnected))
+      // console.log("is",state.isConnected)
+      settInterenetConnected(state.isConnected)
+      // setIsConnected(state.isConnected);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  // useEffect(() => {
+
+  //   if (Platform.OS === 'ios') {
+  //     iosAdsSetup()
+  //   }
+
+  // }, [])
+
+  // const iosAdsSetup = async () => {
+  //   const result = await check(PERMISSIONS.IOS.APP_TRACKING_TRANSPARENCY);
+  //   if (result === RESULTS.DENIED || result === RESULTS.UNAVAILABLE) {
+  //     await request(PERMISSIONS.IOS.APP_TRACKING_TRANSPARENCY);
+  //   }
+  // }
+
 
   return (
 
     <Provider store={store}>
-      <StatusBar  barStyle={'dark-content'}/>
+      <StatusBar barStyle={'dark-content'} />
       <NavigationContainer>
         {
           isInternetConnected == false && (
 
-            <View style={{height:40, position:'absolute', zIndex:1, bottom:0, backgroundColor:AppColors.DARKGRAY, width:responsiveWidth(100), alignItems:'center', justifyContent:'center'}}>
-              <AppText title={"No Internet connection"} textColor={AppColors.WHITE}  textSize={2}/>
+            <View style={{ height: 40, position: 'absolute', zIndex: 1, bottom: 0, backgroundColor: AppColors.DARKGRAY, width: responsiveWidth(100), alignItems: 'center', justifyContent: 'center' }}>
+              <AppText title={"No Internet connection"} textColor={AppColors.WHITE} textSize={2} />
             </View>
           )
         }
-        
+
 
         <Routes />
         <Toast />
       </NavigationContainer>
     </Provider>
-    
+
   );
 };
 
