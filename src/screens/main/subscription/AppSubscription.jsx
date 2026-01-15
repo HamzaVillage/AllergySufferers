@@ -8,13 +8,13 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import AppHeader from '../../../components/AppHeader';
 import SubscriptionCard from '../../../components/SubscriptionCard';
 import AppText from '../../../components/AppTextComps/AppText';
 import AppColors from '../../../utils/AppColors';
-import {useDispatch, useSelector} from 'react-redux';
-import {setSubscription} from '../../../redux/Slices/AuthSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { setSubscription } from '../../../redux/Slices/AuthSlice';
 import SubscribeNow from '../../../global/SubscribeNow';
 import {
   endConnection,
@@ -34,10 +34,10 @@ import {
 } from 'react-native-iap';
 import Toast from 'react-native-toast-message';
 import moment from 'moment';
-import {hideNavigationBar} from 'react-native-navigation-bar-color';
+import { hideNavigationBar } from 'react-native-navigation-bar-color';
 import ShowError from '../../../utils/ShowError';
 
-const AppSubscription = ({navigation}) => {
+const AppSubscription = ({ navigation }) => {
   const userData = useSelector(state => state.auth.user);
   const dispatch = useDispatch();
 
@@ -248,7 +248,7 @@ const AppSubscription = ({navigation}) => {
 
   const getSubscriptionInfoIOS = async () => {
     try {
-      const products = await getSubscriptions({skus: iosProductIds});
+      const products = await getSubscriptions({ skus: iosProductIds });
       console.log('products from appstore ===>', products);
       setSubscriptionLocal(products);
     } catch (error) {
@@ -277,13 +277,13 @@ const AppSubscription = ({navigation}) => {
           // return
           const offerToken = data?.subscriptionOfferDetails[0]?.offerToken;
 
-        const purchaseData = await requestSubscription({
-          sku: data?.productId,
-          ...(offerToken && {
-            subscriptionOffers: [{sku: data?.productId, offerToken}],
-          }),
-        });
-        // console.log('offerToken', purchaseData);
+          const purchaseData = await requestSubscription({
+            sku: data?.productId,
+            ...(offerToken && {
+              subscriptionOffers: [{ sku: data?.productId, offerToken }],
+            }),
+          });
+          // console.log('offerToken', purchaseData);
 
           if (purchaseData.length > 0) {
             const subscribeApi = await SubscribeNow(
@@ -307,7 +307,7 @@ const AppSubscription = ({navigation}) => {
           const purchaseData = await requestSubscription({
             sku: data?.productId,
             ...(offerToken && {
-              subscriptionOffers: [{sku: data?.productId, offerToken}],
+              subscriptionOffers: [{ sku: data?.productId, offerToken }],
             }),
           });
 
@@ -389,7 +389,7 @@ const AppSubscription = ({navigation}) => {
                 await acknowledgePurchaseAndroid({
                   token: purchase.purchaseToken,
                 });
-                await finishTransaction({purchase, isConsumable: false});
+                await finishTransaction({ purchase, isConsumable: false });
               }
             } else {
               await finishTransaction({
@@ -418,11 +418,11 @@ const AppSubscription = ({navigation}) => {
 
   return (
     <ScrollView
-      contentContainerStyle={{flexGrow: 1, padding: 20, paddingBottom: 200}}>
+      contentContainerStyle={{ flexGrow: 1, padding: 20, paddingBottom: 200 }}>
       <AppHeader goBack={true} heading="Subscription" />
 
-      <View style={{gap: 20}}>
-        <View style={{marginTop: 0, gap: 2}}>
+      <View style={{ gap: 20 }}>
+        <View style={{ marginTop: 0, gap: 2 }}>
           <AppText
             title={`Benefits`}
             textSize={2}
@@ -461,9 +461,9 @@ const AppSubscription = ({navigation}) => {
 
         {isAndroid ? (
           <FlatList
-            contentContainerStyle={{gap: 10}}
+            contentContainerStyle={{ gap: 10 }}
             data={subscriptionLocal}
-            renderItem={({item}) => {
+            renderItem={({ item }) => {
               const priceObjectIndex =
                 item?.subscriptionOfferDetails[0]?.pricingPhases
                   ?.pricingPhaseList?.length;
@@ -484,9 +484,9 @@ const AppSubscription = ({navigation}) => {
           />
         ) : (
           <FlatList
-            contentContainerStyle={{gap: 10}}
+            contentContainerStyle={{ gap: 10 }}
             data={subscriptionLocal}
-            renderItem={({item}) => {
+            renderItem={({ item }) => {
               const displayName =
                 item?.title === '1 month localization'
                   ? 'AllergySufferers - One Month Premium Membership'
@@ -547,7 +547,7 @@ const AppSubscription = ({navigation}) => {
 
         <TouchableOpacity
           onPress={() => NoSubscription()}
-          style={{marginTop: 10}}>
+          style={{ marginTop: 10 }}>
           <AppText
             title={'Continue without subscription'}
             textSize={2}
