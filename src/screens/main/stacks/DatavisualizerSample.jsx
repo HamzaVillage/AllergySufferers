@@ -1192,11 +1192,11 @@ const DatavisualizerSample = ({ navigation }) => {
                         borderRightWidth: 1,
                         paddingRight: 5,
                       }}>
-                      <AppText
+                      {/* <AppText
                         title={8}
                         textSize={2}
                         textColor={AppColors.LIGHTGRAY}
-                      />
+                      /> */}
                       <AppText
                         title={6}
                         textSize={2}

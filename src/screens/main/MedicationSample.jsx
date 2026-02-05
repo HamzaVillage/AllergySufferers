@@ -10,7 +10,7 @@ import {
   Alert,
   StatusBar,
 } from 'react-native';
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AppHeader from '../../components/AppHeader';
 import {
   responsiveFontSize,
@@ -19,11 +19,11 @@ import {
 } from '../../utils/Responsive_Dimensions';
 import AppText from '../../components/AppTextComps/AppText';
 import AppColors from '../../utils/AppColors';
-import {BarChart} from 'react-native-gifted-charts';
+import { BarChart } from 'react-native-gifted-charts';
 import AppButton from '../../components/AppButton';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import BASE_URL from '../../utils/BASE_URL';
-import {useDispatch, useSelector} from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 // import moment from 'moment';
 import moment from 'moment-timezone'; // includes all moment features + timezone
@@ -31,17 +31,17 @@ import moment from 'moment-timezone'; // includes all moment features + timezone
 import DatePicker from 'react-native-date-picker';
 import AppIntroSlider from 'react-native-app-intro-slider';
 import SubscribeBar from '../../components/SubscribeBar';
-import {ApiCallWithUserId} from '../../global/ApiCall';
+import { ApiCallWithUserId } from '../../global/ApiCall';
 import {
   addUnitToActiveMedicaton,
   removeUnitToActiveMedicaton,
   setActiveMedication,
   setAllMedicationFromApi,
 } from '../../redux/Slices/MedicationSlice';
-import {useFocusEffect} from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import AppImages from '../../assets/images/AppImages';
 
-const MedicationSample = ({navigation}) => {
+const MedicationSample = ({ navigation }) => {
   const sliderRef = useRef(null);
   const dispatch = useDispatch();
   const userData = useSelector(state => state.auth.user);
@@ -178,7 +178,7 @@ const MedicationSample = ({navigation}) => {
         'post',
         'update_medication_units',
         userData?.id,
-        {data: AllActiveArray},
+        { data: AllActiveArray },
       );
       // setSavingDataLoader(false);
       console.log('dataSaved');
@@ -384,7 +384,7 @@ const MedicationSample = ({navigation}) => {
 
             barData.push({
               value,
-              ...(idx === 0 && {label: formattedLabel}), // 👈 sirf idx==0 pe hi label add hoga
+              ...(idx === 0 && { label: formattedLabel }), // 👈 sirf idx==0 pe hi label add hoga
               spacing: isLast ? responsiveWidth(2.5) : 0, // ✅ spacing only for last of this date
               frontColor: entry.frontColor || '#E23131',
               labelWidth: 0,
@@ -499,7 +499,7 @@ const MedicationSample = ({navigation}) => {
           marginBottom: 20,
         }}
         keyExtractor={item => item?.id?.toString()}
-        renderItem={({item}) => {
+        renderItem={({ item }) => {
           return (
             <View
               style={{
@@ -692,10 +692,10 @@ const MedicationSample = ({navigation}) => {
       currentSlide?.barData?.length * (barWidth + spacing) + spacing;
 
     return (
-      <View style={{height: responsiveHeight(35), alignItems: 'center'}}>
-        <Text style={{fontSize: 16}}>{currentSlide?.title}</Text>
+      <View style={{ height: responsiveHeight(35), alignItems: 'center' }}>
+        <Text style={{ fontSize: 16 }}>{currentSlide?.title}</Text>
 
-        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity
             onPress={goPrev}
             disabled={currentIndex === 0}
@@ -718,15 +718,15 @@ const MedicationSample = ({navigation}) => {
               // bottom: responsiveHeight(1),
               // backgroundColor: AppColors.rightArrowCOlor,
               left: responsiveWidth(2.5),
-              gap: Platform.OS == 'ios' ? 9 : 8,
+              gap: Platform.OS == 'ios' ? 16 : 15,
               justifyContent: 'space-between',
               borderRightWidth: 1,
               paddingRight: 5,
               marginBottom: 14,
               marginLeft: 12,
             }}>
-            <AppText title={8} textSize={1.5} textColor={AppColors.LIGHTGRAY} />
-            <AppText title={7} textSize={1.5} textColor={AppColors.LIGHTGRAY} />
+            {/* <AppText title={8} textSize={1.5} textColor={AppColors.LIGHTGRAY} />
+            <AppText title={7} textSize={1.5} textColor={AppColors.LIGHTGRAY} /> */}
             <AppText title={6} textSize={1.5} textColor={AppColors.LIGHTGRAY} />
             <AppText title={5} textSize={1.5} textColor={AppColors.LIGHTGRAY} />
             <AppText title={4} textSize={1.5} textColor={AppColors.LIGHTGRAY} />
@@ -753,9 +753,9 @@ const MedicationSample = ({navigation}) => {
               width={chartWidth}
               barBorderRadius={2}
               isAnimated={true}
-              maxValue={8}
+              maxValue={6}
               stepValue={1}
-              
+
               hideDataPoints={false}
               spacing={spacing}
               formatYLabel={label => parseFloat(label).toFixed(0)}
@@ -771,7 +771,7 @@ const MedicationSample = ({navigation}) => {
           <TouchableOpacity
             onPress={goNext}
             disabled={currentIndex === MedicationnRecord.length - 1}
-            style={{height: responsiveHeight(18), justifyContent: 'center'}}>
+            style={{ height: responsiveHeight(18), justifyContent: 'center' }}>
             <AntDesign
               name="right"
               size={20}
@@ -785,7 +785,7 @@ const MedicationSample = ({navigation}) => {
         </View>
 
         {/* Dots */}
-        <View style={{flexDirection: 'row', marginTop: 10}}>
+        <View style={{ flexDirection: 'row', marginTop: 10 }}>
           {MedicationnRecord.map((_, index) => (
             <View
               key={index}
@@ -807,9 +807,9 @@ const MedicationSample = ({navigation}) => {
   // console.log("MedicationnRecord", MedicationnRecord.length)
   return (
     <SafeAreaView
-      style={{flex: 1, backgroundColor: AppColors.WHITE, paddingTop: 20}}>
+      style={{ flex: 1, backgroundColor: AppColors.WHITE, paddingTop: 20 }}>
       <StatusBar barStyle={'dark-content'} />
-      <View style={{padding: 20, backgroundColor: AppColors.WHITE, flex: 1}}>
+      <View style={{ padding: 20, backgroundColor: AppColors.WHITE, flex: 1 }}>
         <AppHeader
           heading="Medication"
           Rightheading="Today"
@@ -850,7 +850,7 @@ const MedicationSample = ({navigation}) => {
         />
 
         <ScrollView
-          contentContainerStyle={{flexGrow: 1, paddingBottom: 200}}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 200 }}
           nestedScrollEnabled>
           {savingDataLoader && (
             <ActivityIndicator size={'small'} color={AppColors.BLACK} />
@@ -870,7 +870,7 @@ const MedicationSample = ({navigation}) => {
               {MedicationnRecord.length > 0 && <>{memoizedSlider()}</>}
             </>
           ) : (
-            <View style={{justifyContent: 'center', marginTop: 20}}>
+            <View style={{ justifyContent: 'center', marginTop: 20 }}>
               <SubscribeBar
                 title="Subscribe now to log your daily medication intake"
                 title2={
@@ -883,7 +883,7 @@ const MedicationSample = ({navigation}) => {
           )}
 
           {expireDate && (
-            <View style={{marginTop: 20, gap: 20}}>
+            <View style={{ marginTop: 20, gap: 20 }}>
               <AppButton
                 title={'GO TO DATA VISUALIZER'}
                 RightColour={AppColors.rightArrowCOlor}
