@@ -342,12 +342,12 @@ const DatavisualizerSample = ({ navigation }) => {
     }
 
     const end = moment(); // today
-    const start = moment().local().subtract(6, 'day'); // last 7 days
+    const start = moment().local().subtract(20, 'day'); // last 21 days
 
     setStartDate(start);
     setEndDate(end);
 
-    // ✅ sirf last 7 din ka data lo
+    // ✅ sirf last 21 din ka data lo
     const filteredData = allActiveMedicationRedux.filter(entry =>
       moment(entry.date, 'YYYY-MM-DD').isBetween(start, end, 'day', '[]'),
     );
@@ -412,17 +412,17 @@ const DatavisualizerSample = ({ navigation }) => {
       )
       .join('&');
 
-    // Get date 7 days ago (start point)
-    const previousSevenDate = moment().local().subtract(6, 'days');
+    // Get date 21 days ago (start point)
+    const previousSevenDate = moment().local().subtract(20, 'days');
     // Convert your API date to moment
     const targetDate = moment(allActiveMedicationRedux[0]?.date).local();
-    // Check if it's before 7 days ago
+    // Check if it's before 21 days ago
     const checkDateIsBefore = targetDate.isBefore(previousSevenDate);
 
     const dateis =
       allActiveMedicationRedux.length > 0 && !checkDateIsBefore
         ? moment(allActiveMedicationRedux[0]?.date).local().format('YYYY-MM-DD')
-        : moment().local().subtract(6, 'day').format('YYYY-MM-DD');
+        : moment().local().subtract(20, 'day').format('YYYY-MM-DD');
 
     const pickLat = city
       ? city?.lat
@@ -965,7 +965,7 @@ const DatavisualizerSample = ({ navigation }) => {
                           horizontal
                           keyExtractor={item => item.label}
                           contentContainerStyle={{
-                            width: responsiveWidth(200),
+                            width: responsiveWidth(650),
                             spacing: 20,
                             height: 220,
                             alignItems: 'flex-end',
@@ -1040,7 +1040,7 @@ const DatavisualizerSample = ({ navigation }) => {
                           marginLeft: responsiveWidth(4),
                         }}>
                         <Svg
-                          width={responsiveWidth(200)}
+                          width={responsiveWidth(650)}
                           height={responsiveHeight(28)}>
                           <Polyline
                             points={points}
@@ -1067,7 +1067,7 @@ const DatavisualizerSample = ({ navigation }) => {
                           marginLeft: responsiveWidth(4),
                         }}>
                         <Svg
-                          width={responsiveWidth(200)}
+                          width={responsiveWidth(650)}
                           height={responsiveHeight(28)}>
                           <Polyline
                             points={secondpoints}
@@ -1097,7 +1097,7 @@ const DatavisualizerSample = ({ navigation }) => {
                           marginLeft: responsiveWidth(4),
                         }}>
                         <Svg
-                          width={responsiveWidth(200)}
+                          width={responsiveWidth(650)}
                           height={responsiveHeight(28)}>
                           <Polyline
                             points={thirdpoints}
@@ -1129,7 +1129,7 @@ const DatavisualizerSample = ({ navigation }) => {
                           marginLeft: responsiveWidth(4),
                         }}>
                         <Svg
-                          width={responsiveWidth(200)}
+                          width={responsiveWidth(650)}
                           height={responsiveHeight(28)}>
                           <Polyline
                             points={fourthpoints}
@@ -1159,7 +1159,7 @@ const DatavisualizerSample = ({ navigation }) => {
                           marginLeft: responsiveWidth(4),
                         }}>
                         <Svg
-                          width={responsiveWidth(200)}
+                          width={responsiveWidth(650)}
                           height={responsiveHeight(28)}>
                           <Polyline
                             points={fifthpoints}
@@ -1184,10 +1184,10 @@ const DatavisualizerSample = ({ navigation }) => {
                       style={{
                         position: 'absolute',
                         zIndex: 10,
-                        // bottom: responsiveHeight(1),
+                        bottom: Platform.OS === 'ios' ? responsiveHeight(5.5) : responsiveHeight(5),
                         // backgroundColor: AppColors.rightArrowCOlor,
                         left: responsiveWidth(1.9),
-                        gap: Platform.OS == 'ios' ? 30 : 27,
+                        gap: Platform.OS == 'ios' ? 32 : 30,
                         justifyContent: 'space-between',
                         borderRightWidth: 1,
                         paddingRight: 5,

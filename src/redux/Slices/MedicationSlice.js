@@ -1,7 +1,7 @@
 // MedicationSlice.js
-import {createSlice} from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
 import moment from 'moment';
-import {Alert} from 'react-native';
+import { Alert } from 'react-native';
 
 const initialState = {
   ActiveMedications: [],
@@ -48,7 +48,7 @@ const MedicationSlice = createSlice({
     setCurrentActiveMedication: (state, action) => {
       const newMed = action.payload;
       const exists = state.MyCurrentMeds.some(med => med.id === newMed.id);
-      if (!exists) {
+      if (!exists && state.MyCurrentMeds.length < 7) {
         state.MyCurrentMeds.push(newMed);
       }
     },
@@ -64,7 +64,7 @@ const MedicationSlice = createSlice({
       const allMedRecords = state.ActiveMedications;
       const newMed = action.payload;
 
-      
+
 
       const existMed = allMedRecords.find(
         med => med.id == newMed.id && med.date == curretDate,
@@ -87,12 +87,12 @@ const MedicationSlice = createSlice({
 
 
 
-      
+
       // Find index of the matching medication
       const index = state.ActiveMedications.findIndex(
-        med =>  med.id == medToRemove.id && med.date == curretDate,
+        med => med.id == medToRemove.id && med.date == curretDate,
       );
-     
+
       // console.log("medToRemove",index, state.ActiveMedications)
       // return
 
@@ -116,7 +116,7 @@ const MedicationSlice = createSlice({
       state.MyCurrentMeds = [];
       state.allMyCity = []
       state.ActiveCity = null
-      
+
     },
 
     //add city flow
@@ -146,7 +146,7 @@ const MedicationSlice = createSlice({
 
     setAddCity: (state, action) => {
       const newCity = action.payload;
-      
+
       // console.log("state.allMyCity",newCity)
       if (newCity.currentLocation === true) {
         // ✅ Remove old current location
@@ -187,12 +187,12 @@ const MedicationSlice = createSlice({
     setActiveCity: (state, action) => {
       state.ActiveCity = action.payload
     },
-    setSortCity:(state, action) => {
+    setSortCity: (state, action) => {
 
-      
+
       state.allMyCity = action.payload
     },
-    
+
   },
 });
 

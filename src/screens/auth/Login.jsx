@@ -9,16 +9,17 @@ import {
   PermissionsAndroid,
   Keyboard,
   KeyboardAvoidingView,
+  Image,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import AppColors from '../../utils/AppColors';
 import AppText from '../../components/AppTextComps/AppText';
 import AppTextInput from '../../components/AppTextInput';
 import AppButton from '../../components/AppButton';
 import BASE_URL from '../../utils/BASE_URL';
 import axios from 'axios';
-import {useDispatch, useSelector} from 'react-redux';
-import {CurrentLogin, setLoader} from '../../redux/Slices/AuthSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { CurrentLogin, setLoader } from '../../redux/Slices/AuthSlice';
 import {
   getMessaging,
   getToken,
@@ -27,21 +28,31 @@ import {
 import { responsiveFontSize } from '../../utils/Responsive_Dimensions';
 import Ionicons from 'react-native-vector-icons/Ionicons'
 import ShowError from '../../utils/ShowError';
-const Login = ({navigation}) => {
+import SocialAuthButton from '../../components/SocialAuthButton';
+import AppImages from '../../assets/images/AppImages';
+import {
+  GoogleSignin,
+  GoogleSigninButton,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
+const Login = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [SecurePassword, setSecurePassword] = useState(true)
   const loading = useSelector(state => state.auth.loader);
   const userData = useSelector(state => state.auth.user);
   const expireDate = useSelector(state => state.auth.expireDate);
-    const internetConnection = useSelector(state => state?.blacklist?.isInternetConnected)
-  
+  const internetConnection = useSelector(state => state?.blacklist?.isInternetConnected)
+
 
   const dispatch = useDispatch();
 
 
 
   useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: '883289455736-tnnhgadpjcv2vrn6b549583ivsicss06.apps.googleusercontent.com',
+    });
 
     if (userData?.email) {
       navigation.navigate('Main');
@@ -60,54 +71,95 @@ const Login = ({navigation}) => {
       }
       return;
     }
-    
-    if(!internetConnection){
+
+    if (!internetConnection) {
 
       return ShowError("No Internet connection", 2000)
     }
     try {
 
-    // await messaging().registerDeviceForRemoteMessages();
-    await registerDeviceForRemoteMessages(getMessaging());
-    
-    // const token = await messaging().getToken();
-    const token = await getToken(getMessaging());
- 
-    dispatch(setLoader(true));
-    let data = new FormData();
-    data.append('email', email);
-    data.append('password', password);
-    data.append('fcm_token', token);
+      // await messaging().registerDeviceForRemoteMessages();
+      await registerDeviceForRemoteMessages(getMessaging());
 
-    let config = {
-      method: 'post',
-      maxBodyLength: Infinity,
-      url: `${BASE_URL}/allergy_data/v1/user/signin`,
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-      data: data,
-    };
-    if (Platform.OS == 'android') {
-      await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-        {
-          title: 'Allergy Sufferers',
-          message: 'Allergy sufferers want to access your location',
+      // const token = await messaging().getToken();
+      const token = await getToken(getMessaging());
+
+      dispatch(setLoader(true));
+      let data = new FormData();
+      data.append('email', email);
+      data.append('password', password);
+      data.append('fcm_token', token);
+
+      let config = {
+        method: 'post',
+        maxBodyLength: Infinity,
+        url: `${BASE_URL}/allergy_data/v1/user/signin`,
+        headers: {
+          'Content-Type': 'multipart/form-data',
         },
-      );
-    }
+        data: data,
+      };
+      if (Platform.OS == 'android') {
+        await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          {
+            title: 'Allergy Sufferers',
+            message: 'Allergy sufferers want to access your location',
+          },
+        );
+      }
 
-    dispatch(CurrentLogin(config));
-          
+      dispatch(CurrentLogin(config));
+
     } catch (error) {
-     console.log("error", error) 
+      console.log("error", error)
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    try {
+      if (!internetConnection) {
+        return ShowError("No Internet connection", 2000)
+      }
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      const idToken = userInfo.data.idToken;
+
+      await registerDeviceForRemoteMessages(getMessaging());
+      const fcmToken = await getToken(getMessaging());
+
+      dispatch(setLoader(true));
+      let config = {
+        method: 'post',
+        maxBodyLength: Infinity,
+        url: `${BASE_URL}/allergy_data/v1/user/google-auth`,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: {
+          id_token: idToken,
+          fcm_token: fcmToken,
+        },
+      };
+
+      dispatch(CurrentLogin(config));
+
+    } catch (error) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        console.log("User cancelled the login flow");
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        console.log("Signing in");
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        console.log("Play services not available");
+      } else {
+        console.log("Some other error happened", error);
+      }
     }
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS == "ios" ? 'padding': 'height'} style={{flex:1}}>
-    
+    <KeyboardAvoidingView behavior={Platform.OS == "ios" ? 'padding' : 'height'} style={{ flex: 1 }}>
+
       <ScrollView
         contentContainerStyle={{
           flexGrow: 1,
@@ -123,7 +175,7 @@ const Login = ({navigation}) => {
           textFontWeight
         />
 
-        <View style={{alignItems: 'center', justifyContent: 'center'}}>
+        <View style={{ alignItems: 'center', justifyContent: 'center' }}>
           <AppText
             title={'Let’s get started'}
             textColor={AppColors.BLACK}
@@ -138,7 +190,7 @@ const Login = ({navigation}) => {
           />
         </View>
 
-        <View style={{gap: 20,}}>
+        <View style={{ gap: 20, }}>
           <AppTextInput
             title="Email Address"
             inputPlaceHolder={'Enter email'}
@@ -146,7 +198,7 @@ const Login = ({navigation}) => {
             value={email}
             textInput={true}
           />
-          <View style={{gap: 5}}>
+          <View style={{ gap: 5 }}>
             <AppTextInput
               title="Password"
               inputPlaceHolder={'Enter password'}
@@ -155,8 +207,8 @@ const Login = ({navigation}) => {
               inputWidth={72}
               secure={SecurePassword}
               textInput={true}
-              password={<Ionicons name={ !SecurePassword == true ?  "eye" : "eye-off"} size={responsiveFontSize(2)}/>}
-              onEyePress={()=> setSecurePassword(!SecurePassword)}
+              password={<Ionicons name={!SecurePassword == true ? "eye" : "eye-off"} size={responsiveFontSize(2)} />}
+              onEyePress={() => setSecurePassword(!SecurePassword)}
               eye={SecurePassword}
             />
             <TouchableOpacity
@@ -166,11 +218,11 @@ const Login = ({navigation}) => {
                 textColor={AppColors.BLUE}
                 textSize={1.8}
                 textAlignment={'flex-end'}
-                
+
               />
             </TouchableOpacity>
           </View>
-          <View style={{gap: 10}}>
+          <View style={{ gap: 10 }}>
             <AppButton
               title={'LOGIN'}
               RightColour={AppColors.WHITE}
@@ -182,6 +234,48 @@ const Login = ({navigation}) => {
               RightColour={AppColors.WHITE}
               handlePress={() => navigation.navigate('CreateAccount')}
             />
+
+            <View style={{ marginVertical: 10 }}>
+              <AppText
+                title={'OR'}
+                textAlignment={'center'}
+                textSize={1.8}
+                textColor={AppColors.LIGHTGRAY}
+              />
+            </View>
+
+            <View style={{ gap: 15 }}>
+              <SocialAuthButton
+                title={'Continue with Google'}
+                onPress={() => signInWithGoogle()}
+                bgColor={AppColors.WHITE}
+                txtColor={AppColors.BLACK}
+                logo={
+                  <Image
+                    source={AppImages.GOOGLE}
+                    style={{ height: 20, width: 20, resizeMode: 'contain' }}
+                  />
+                }
+              />
+
+              {Platform.OS === 'ios' && (
+                <SocialAuthButton
+                  title={'Continue with Apple'}
+                  bgColor={AppColors.BLACK}
+                  logo={
+                    <Image
+                      source={AppImages.APPLE}
+                      style={{
+                        height: 20,
+                        width: 20,
+                        resizeMode: 'contain',
+                        tintColor: 'white',
+                      }}
+                    />
+                  }
+                />
+              )}
+            </View>
           </View>
         </View>
       </ScrollView>

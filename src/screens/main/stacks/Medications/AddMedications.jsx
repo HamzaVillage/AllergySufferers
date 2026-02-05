@@ -9,7 +9,7 @@ import {
   Modal,
   Alert,
 } from 'react-native';
-import React, {act, useEffect, useState} from 'react';
+import React, { act, useEffect, useState } from 'react';
 import AppHeader from '../../../../components/AppHeader';
 import AppText from '../../../../components/AppTextComps/AppText';
 import {
@@ -25,14 +25,14 @@ import SocialAuthButton from '../../../../components/SocialAuthButton';
 import AppTextInput from '../../../../components/AppTextInput';
 import Octicons from 'react-native-vector-icons/Octicons';
 import BASE_URL from '../../../../utils/BASE_URL';
-import {useDispatch, useSelector} from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import LoaderMode from '../../../../components/LoaderMode';
 import Toast from 'react-native-toast-message';
 import DatePicker from 'react-native-date-picker';
 import moment from 'moment';
-import {ApiCallWithUserId} from '../../../../global/ApiCall';
+import { ApiCallWithUserId } from '../../../../global/ApiCall';
 import {
   GetAllMedicationFromApi,
   setActiveMedication,
@@ -40,7 +40,7 @@ import {
   UpdateMedicationListOnEveryDate,
 } from '../../../../redux/Slices/MedicationSlice';
 
-const AddMedications = ({navigation}) => {
+const AddMedications = ({ navigation }) => {
   const dispatch = useDispatch();
   const userData = useSelector(state => state.auth.user);
   const allActiveMedicationRedux = useSelector(
@@ -60,8 +60,8 @@ const AddMedications = ({navigation}) => {
   );
 
 
-    const expireDate = useSelector(state => state.auth.expireDate);
-  
+  const expireDate = useSelector(state => state.auth.expireDate);
+
   const [medicationData, setMedicationsData] = useState([]);
   const [MedicationLoader, setMedciationLoader] = useState(false);
 
@@ -88,12 +88,12 @@ const AddMedications = ({navigation}) => {
   }, [navigation]);
 
   const getMedicationApi = () => {
-    if(allMedication.length > 0){
-      setMedciationLoader(false);  
-    }else{
-      setMedciationLoader(true);  
+    if (allMedication.length > 0) {
+      setMedciationLoader(false);
+    } else {
+      setMedciationLoader(true);
     }
-    
+
     let config = {
       method: 'get',
       maxBodyLength: Infinity,
@@ -169,29 +169,40 @@ const AddMedications = ({navigation}) => {
 
     // console.log("expireDate",expireDate)
 
-      if (!expireDate) {
-          Alert.alert(
-            'Subscribe', // Title of the alert
-            'Subscribe to add the pollens', // Message
-            [
-              {
-                text: 'Cancel',
-                onPress: () => console.log('Cancel Pressed'),
-                style: 'cancel',
-              },
-              {
-                text: 'Subscribe Now',
-                onPress: () => navigation.navigate("Subscription"),
-                // You can replace the above with your subscription logic
-              },
-            ],
-            {cancelable: false},
-          );
-          return;
-        }
+    if (!expireDate) {
+      Alert.alert(
+        'Subscribe', // Title of the alert
+        'Subscribe to add the pollens', // Message
+        [
+          {
+            text: 'Cancel',
+            onPress: () => console.log('Cancel Pressed'),
+            style: 'cancel',
+          },
+          {
+            text: 'Subscribe Now',
+            onPress: () => navigation.navigate("Subscription"),
+            // You can replace the above with your subscription logic
+          },
+        ],
+        { cancelable: false },
+      );
+      return;
+    }
 
     if (medicationdata.id === 6082) {
       SetAddYourMedication(true);
+      return;
+    }
+
+    if (allActiveMedicationRedux.length >= 7) {
+      Toast.show({
+        type: 'error',
+        text1: 'Limit Reached',
+        text2: 'You can only have 7 medications. Please delete one first.',
+        position: 'bottom',
+        visibilityTime: 1500
+      });
       return;
     }
 
@@ -235,8 +246,8 @@ const AddMedications = ({navigation}) => {
                 Toast.show({
                   type: 'success',
                   text1: 'Medication added successfully',
-                  position:'bottom',
-      visibilityTime:800
+                  position: 'bottom',
+                  visibilityTime: 800
                 });
               })
               .catch(error => {
@@ -251,9 +262,21 @@ const AddMedications = ({navigation}) => {
 
   const AddCustomMedication = () => {
 
-    
+
     if (customMecication == '') {
       return Alert.alert('Please type a medication name');
+    }
+
+    if (allActiveMedicationRedux.length >= 7) {
+      SetAddYourMedication(false);
+      Toast.show({
+        type: 'error',
+        text1: 'Limit Reached',
+        text2: 'You can only have 7 medications. Please delete one first.',
+        position: 'bottom',
+        visibilityTime: 1500
+      });
+      return;
     }
 
     setCustomMedicationLoader(true);
@@ -284,8 +307,8 @@ const AddMedications = ({navigation}) => {
         Toast.show({
           type: 'success',
           text1: 'Custom medication added to your list.',
-          position:'bottom',
-      visibilityTime:800
+          position: 'bottom',
+          visibilityTime: 800
         });
       })
       .catch(error => {
@@ -297,46 +320,47 @@ const AddMedications = ({navigation}) => {
       });
   };
 
-  
-  // local functionality
-   const AddMedicationActiveToLocal  = async (medData) => {
 
-     if (!expireDate) {
-          Alert.alert(
-            'Subscribe', // Title of the alert
-            'Subscribe to add the pollens', // Message
-            [
-              {
-                text: 'Cancel',
-                onPress: () => console.log('Cancel Pressed'),
-                style: 'cancel',
-              },
-              {
-                text: 'Subscribe Now',
-                onPress: () => navigation.navigate("Subscription"),
-                // You can replace the above with your subscription logic
-              },
-            ],
-            {cancelable: false},
-          );
-          return;
-        }
-    
+  // local functionality
+  const AddMedicationActiveToLocal = async (medData) => {
+
+    if (!expireDate) {
+      Alert.alert(
+        'Subscribe', // Title of the alert
+        'Subscribe to add the pollens', // Message
+        [
+          {
+            text: 'Cancel',
+            onPress: () => console.log('Cancel Pressed'),
+            style: 'cancel',
+          },
+          {
+            text: 'Subscribe Now',
+            onPress: () => navigation.navigate("Subscription"),
+            // You can replace the above with your subscription logic
+          },
+        ],
+        { cancelable: false },
+      );
+      return;
+    }
+
     if (medData.id === 6082) {
       AddMedicationActive(medData);
       return;
     }
 
-    if(currentDateMeds.length >= 6 ){
-        Toast.show({
+    if (allActiveMedicationRedux.length >= 7) {
+      Toast.show({
         type: 'error',
-        text1: 'You can only add 6 medications at a time',
-        position:'bottom',
-        visibilityTime:800
+        text1: 'Limit Reached',
+        text2: 'You can only have 7 medications. Please delete one first.',
+        position: 'bottom',
+        visibilityTime: 1500
       });
-      return
+      return;
     }
-    
+
     // if(allActiveMedicationRedux.length == 7 || allActiveMedicationRedux.length > 7 ){
     //   Toast.show({
     //     type: 'error',
@@ -352,13 +376,13 @@ const AddMedications = ({navigation}) => {
     Toast.show({
       type: 'success',
       text1: 'Medication added in your daily intake',
-      position:'bottom',
-      visibilityTime:800
+      position: 'bottom',
+      visibilityTime: 800
     });
 
-    const medicationUpdate =  await ApiCallWithUserId("post", "set_medications", userData?.id,{"data": [medData.id]} )
+    const medicationUpdate = await ApiCallWithUserId("post", "set_medications", userData?.id, { "data": [medData.id] })
 
-    console.log("medicationUpdate",medicationUpdate)
+    console.log("medicationUpdate", medicationUpdate)
   };
 
 
@@ -367,9 +391,9 @@ const AddMedications = ({navigation}) => {
   }
 
   return (
-    <SafeAreaView style={{flex: 1}}>
-      <View style={{padding: 20}}>
-        <View style={{marginBottom: 10}}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <View style={{ padding: 20 }}>
+        <View style={{ marginBottom: 10 }}>
           <AppHeader
             heading={`Add ${'\n'}Medications`}
             goBack
@@ -399,11 +423,11 @@ const AddMedications = ({navigation}) => {
 
         <Modal
           visible={addYourMedication}
-          style={{padding: 20}}
+          style={{ padding: 20 }}
           animationType="fade">
-          <View style={{padding: 20}}>
+          <View style={{ padding: 20 }}>
             <TouchableOpacity
-              style={{height: 30, width: 30}}
+              style={{ height: 30, width: 30 }}
               onPress={() => SetAddYourMedication(false)}>
               <AppText title={'X'} textSize={3} />
             </TouchableOpacity>
@@ -424,7 +448,7 @@ const AddMedications = ({navigation}) => {
               value={customMecication}
             />
 
-            <View style={{marginTop: 20}}>
+            <View style={{ marginTop: 20 }}>
               <AppButton
                 title={'Add Medication'}
                 handlePress={() => AddCustomMedication()}
@@ -434,7 +458,7 @@ const AddMedications = ({navigation}) => {
           </View>
         </Modal>
 
-        <View style={{gap: 10}}>
+        <View style={{ gap: 10 }}>
           <AppTextInput
             inputPlaceHolder={'Search Medications'}
             textInput={true}
