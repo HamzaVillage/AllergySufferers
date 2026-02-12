@@ -1965,6 +1965,8 @@ PODS:
     - React-logger (= 0.79.2)
     - React-perflogger (= 0.79.2)
     - React-utils (= 0.79.2)
+  - RNAppleAuthentication (2.5.1):
+    - React-Core
   - RNCAsyncStorage (2.1.2):
     - DoubleConversion
     - glog
@@ -2101,7 +2103,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - RNIap (12.16.4):
+  - RNIap (12.16.2):
     - RCT-Folly
     - RCTRequired
     - RCTTypeSafety
@@ -2446,6 +2448,7 @@ DEPENDENCIES:
   - ReactAppDependencyProvider (from `build/generated/ios`)
   - ReactCodegen (from `build/generated/ios`)
   - ReactCommon/turbomodule/core (from `../node_modules/react-native/ReactCommon`)
+  - "RNAppleAuthentication (from `../node_modules/@invertase/react-native-apple-authentication`)"
   - "RNCAsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
   - "RNCMaskedView (from `../node_modules/@react-native-masked-view/masked-view`)"
   - "RNFBApp (from `../node_modules/@react-native-firebase/app`)"
@@ -2646,6 +2649,8 @@ EXTERNAL SOURCES:
     :path: build/generated/ios
   ReactCommon:
     :path: "../node_modules/react-native/ReactCommon"
+  RNAppleAuthentication:
+    :path: "../node_modules/@invertase/react-native-apple-authentication"
   RNCAsyncStorage:
     :path: "../node_modules/@react-native-async-storage/async-storage"
   RNCMaskedView:
@@ -2777,6 +2782,7 @@ SPEC CHECKSUMS:
   ReactAppDependencyProvider: 04d5eb15eb46be6720e17a4a7fa92940a776e584
   ReactCodegen: 041559ba76d00f6680dfa0916b3c791f4babe5ea
   ReactCommon: 1511ef100f1afa4c199fe52fe7a8d2529a41429a
+  RNAppleAuthentication: a89c9804592b38ed4ab11f0aee68d05ba12ad432
   RNCAsyncStorage: 646c1bf2ebfc78d6632a3b0399f471fba8101e73
   RNCMaskedView: d72fac1c6517be910e8be1370ac324059bcbe677
   RNFBApp: 12884d3bf9b3a0223efe4a0adce516edf72c4102
@@ -2786,7 +2792,7 @@ SPEC CHECKSUMS:
   RNGestureHandler: 381f81c675883fec9f8f10976aa278babc48d8eb
   RNGoogleMobileAds: 93b1ac7e7d29de9349ed09863d21b389581f6747
   RNGoogleSignin: 8ce53d461c2eb4c919e25db2fe33ea6297678ca1
-  RNIap: f14cb76671570a0144bbf0cb23541f0f3364f393
+  RNIap: d73cedfb73b396cad75f90f4ed7d64352d6381cf
   RNNotifee: 5e3b271e8ea7456a36eec994085543c9adca9168
   RNReanimated: a3f55346df73f35c38bf0b446294d3d0b1ac8cf9
   RNScreens: a25b818417609cbd805474dffd2d28b229704cfc

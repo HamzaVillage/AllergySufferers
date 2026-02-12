@@ -10,6 +10,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setLogout } from '../../../../redux/Slices/AuthSlice';
 import { clearForaCastSlive } from '../../../../redux/Slices/ForecastSlice';
 import { deleteAllData } from '../../../../redux/Slices/MedicationSlice';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 const Account = ({ navigation }) => {
   const [loader, setLoader] = useState()
   const userData = useSelector(state => state?.auth?.user);
@@ -48,13 +51,25 @@ const Account = ({ navigation }) => {
       setLoader(true)
       const res = await ApiCallWithUserId('post', 'logout', userData?.id,)
 
-
+      console.log("userdata", userData)
       if (res?.success == true) {
+        // Sign out from Google if user was signed in with Google
+        try {
+          // await GoogleSignin.revokeAcces s();
+          await GoogleSignin.signOut();
+        } catch (error) {
+          console.log('Google sign out error:', error);
+        }
+        await AsyncStorage.clear();
+
         setLoader(false)
         dispatch(setLogout())
         dispatch(clearForaCastSlive())
         dispatch(deleteAllData())
-        navigation.navigate("Auth")
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Auth' }],
+        });
       } else {
         setLoader(false)
       }

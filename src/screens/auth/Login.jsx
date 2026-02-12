@@ -35,6 +35,9 @@ import {
   GoogleSigninButton,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
+import appleAuth, { AppleButton } from '@invertase/react-native-apple-authentication';
+
+
 const Login = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -52,6 +55,7 @@ const Login = ({ navigation }) => {
   useEffect(() => {
     GoogleSignin.configure({
       webClientId: '883289455736-tnnhgadpjcv2vrn6b549583ivsicss06.apps.googleusercontent.com',
+      iosClientId: '883289455736-rb0irdnv4sqo5oadkb8c1m27ohq4gshp.apps.googleusercontent.com'
     });
 
     if (userData?.email) {
@@ -77,9 +81,6 @@ const Login = ({ navigation }) => {
       return ShowError("No Internet connection", 2000)
     }
     try {
-
-      // await messaging().registerDeviceForRemoteMessages();
-      await registerDeviceForRemoteMessages(getMessaging());
 
       // const token = await messaging().getToken();
       const token = await getToken(getMessaging());
@@ -116,6 +117,53 @@ const Login = ({ navigation }) => {
     }
   };
 
+  async function onAppleButtonPress() {
+    try {
+      if (!internetConnection) {
+        return ShowError("No Internet connection", 2000)
+      }
+
+      const appleAuthRequestResponse = await appleAuth.performRequest({
+        requestedOperation: appleAuth.Operation.LOGIN,
+        requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
+      });
+
+      const credentialState = await appleAuth.getCredentialStateForUser(appleAuthRequestResponse.user);
+
+      const { identityToken, fullName } = appleAuthRequestResponse;
+      const name = fullName ? `${fullName.givenName || ''} ${fullName.familyName || ''}`.trim() : '';
+
+      const fcmToken = await getToken(getMessaging());
+
+      console.log("fcmToken", identityToken, name, fcmToken, credentialState)
+      dispatch(setLoader(true));
+
+      let config = {
+        method: 'post',
+        maxBodyLength: Infinity,
+        url: `${BASE_URL}/allergy_data/v1/user/apple-auth`,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: {
+          identity_token: identityToken,
+          full_name: name,
+          fcm_token: fcmToken,
+        },
+      };
+
+      dispatch(CurrentLogin(config));
+    }
+    catch (error) {
+      if (error.code === appleAuth.Error.CANCELED) {
+        console.log("User cancelled the login flow");
+      } else {
+        console.log("Apple sign in error", error);
+        ShowError("Apple sign in failed", 2000);
+      }
+    }
+  }
+
   const signInWithGoogle = async () => {
     try {
       if (!internetConnection) {
@@ -125,7 +173,6 @@ const Login = ({ navigation }) => {
       const userInfo = await GoogleSignin.signIn();
       const idToken = userInfo.data.idToken;
 
-      await registerDeviceForRemoteMessages(getMessaging());
       const fcmToken = await getToken(getMessaging());
 
       dispatch(setLoader(true));
@@ -259,20 +306,30 @@ const Login = ({ navigation }) => {
               />
 
               {Platform.OS === 'ios' && (
-                <SocialAuthButton
-                  title={'Continue with Apple'}
-                  bgColor={AppColors.BLACK}
-                  logo={
-                    <Image
-                      source={AppImages.APPLE}
-                      style={{
-                        height: 20,
-                        width: 20,
-                        resizeMode: 'contain',
-                        tintColor: 'white',
-                      }}
-                    />
-                  }
+                // <SocialAuthButton
+                //   title={'Continue with Apple'}
+                //   bgColor={AppColors.BLACK}
+                //   logo={
+                //     <Image
+                //       source={AppImages.APPLE}
+                //       style={{
+                //         height: 20,
+                //         width: 20,
+                //         resizeMode: 'contain',
+                //         tintColor: 'white',
+                //       }}
+                //     />
+                //   }
+                // />
+                <AppleButton
+                  buttonStyle={AppleButton.Style.BLACK}
+                  buttonType={AppleButton.Type.CONTINUE}
+                  style={{
+                    width: '100%',
+                    height: 50,
+                    borderRadius: 10
+                  }}
+                  onPress={() => onAppleButtonPress()}
                 />
               )}
             </View>
