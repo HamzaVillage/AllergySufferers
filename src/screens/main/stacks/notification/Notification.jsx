@@ -6,7 +6,7 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import AppHeader from '../../../../components/AppHeader';
 import AppText from '../../../../components/AppTextComps/AppText';
 import {
@@ -18,14 +18,15 @@ import axios from 'axios';
 import AppTextInput from '../../../../components/AppTextInput';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import BASE_URL from '../../../../utils/BASE_URL';
-import {useSelector} from 'react-redux';
+import { useSelector } from 'react-redux';
 import Toast from 'react-native-toast-message';
 // import MaterialDesignIcons from 'react-native-vector-icons/MaterialDesignIcons'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import AppButton from '../../../../components/AppButton';
-const Notification = ({navigation}) => {
+const Notification = ({ navigation }) => {
   const userData = useSelector(state => state?.auth?.user);
   const expireDate = useSelector(state => state?.auth?.expireDate);
+  const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
   const allMyCity = useSelector(state => state?.medications?.allMyCity);
   const [allPollens, setALlPollens] = useState([]);
   const [search, setSearch] = useState('');
@@ -35,7 +36,7 @@ const Notification = ({navigation}) => {
   const [PollenLoader, setPollenApiLoader] = useState(false);
   useEffect(() => {
     const nav = navigation.addListener('focus', () => {
-      if (expireDate) {
+      if (isPremium) {
         getAllPollens();
       }
       getNewNotification();
@@ -95,7 +96,7 @@ const Notification = ({navigation}) => {
   const getNewNotification = item => {
     setNotificationLoader(true);
 
-    console.log("userData?.id",userData?.id)
+    console.log("userData?.id", userData?.id)
     let config = {
       method: 'post',
       maxBodyLength: Infinity,
@@ -108,7 +109,7 @@ const Notification = ({navigation}) => {
         console.log(JSON.stringify(response.data));
         const objectConvertArr = Object.entries(response.data.data).map(
           ([key, value]) => {
-            return {name: key, count: value};
+            return { name: key, count: value };
           },
         );
         setAllNotification(objectConvertArr);
@@ -139,22 +140,22 @@ const Notification = ({navigation}) => {
       });
   };
   const freeUserNotifications = [
-    {id: 1, name: 'Total Spores'},
-    {id: 2, name: 'Total Trees'},
-    {id: 3, name: 'Total Grasses'},
-    {id: 4, name: 'Total Weeds'},
-    {id: 5, name: 'Total Pollen'},
-    {id: 5, name: 'Total Pollen'},
+    { id: 1, name: 'Total Spores' },
+    { id: 2, name: 'Total Trees' },
+    { id: 3, name: 'Total Grasses' },
+    { id: 4, name: 'Total Weeds' },
+    { id: 5, name: 'Total Pollen' },
+    { id: 5, name: 'Total Pollen' },
   ];
   // console.log('all pollens list =====>', allPollens)
   return (
-    <View style={{padding: 20}}>
+    <View style={{ padding: 20 }}>
       <AppHeader heading="Push Notification" goBack={true} />
       {/* <FlatList
     data={[]}
     /> */}
       <ScrollView
-        contentContainerStyle={{flexGrow: 1, paddingBottom: 200}}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 200 }}
         showsVerticalScrollIndicator={false}
         nestedScrollEnabled>
         <AppButton
@@ -167,10 +168,10 @@ const Notification = ({navigation}) => {
           <View>
             <FlatList
               data={AllNotification}
-              contentContainerStyle={{gap: 10, paddingBottom: 20}}
+              contentContainerStyle={{ gap: 10, paddingBottom: 20 }}
               keyExtractor={(item, index) => index.toString()}
               inverted
-              renderItem={({item}) => {
+              renderItem={({ item }) => {
                 return (
                   <View
                     style={{
@@ -186,7 +187,7 @@ const Notification = ({navigation}) => {
                         justifyContent: 'space-between',
                       }}>
                       {/* Main Title */}
-                      <AppText title={item.name == "Average" ? "Total Pollen" : item.name } textSize={2} textFontWeight />
+                      <AppText title={item.name == "Average" ? "Total Pollen" : item.name} textSize={2} textFontWeight />
                       <TouchableOpacity
                         onPress={() => deleteNotification(item)}>
                         <MaterialIcons
@@ -201,14 +202,14 @@ const Notification = ({navigation}) => {
                       horizontal
                       showsHorizontalScrollIndicator={false}
                       data={[
-                        {id: 1, name: 'Low'},
-                        {id: 2, name: 'Moderate'},
-                        {id: 3, name: 'High'},
-                        {id: 4, name: 'Very High'},
+                        { id: 1, name: 'Low' },
+                        { id: 2, name: 'Moderate' },
+                        { id: 3, name: 'High' },
+                        { id: 4, name: 'Very High' },
                       ]}
                       keyExtractor={subItem => subItem.id.toString()}
-                      contentContainerStyle={{gap: 5}}
-                      renderItem={({item: subItem}) => {
+                      contentContainerStyle={{ gap: 5 }}
+                      renderItem={({ item: subItem }) => {
                         return (
                           <TouchableOpacity
                             onPress={() => {
@@ -238,7 +239,7 @@ const Notification = ({navigation}) => {
             />
           </View>
         )}
-        <View style={{marginTop: 20}} />
+        <View style={{ marginTop: 20 }} />
         <AppTextInput
           inputPlaceHolder={'Search Pollens'}
           textInput={true}
@@ -247,7 +248,7 @@ const Notification = ({navigation}) => {
         />
         {loader && (
           <View
-            style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
+            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
             <ActivityIndicator size={'large'} color={AppColors.BLACK} />
           </View>
         )}
@@ -262,8 +263,8 @@ const Notification = ({navigation}) => {
             <ActivityIndicator size={'large'} color={AppColors.BLACK} />
           </View>
         )}
-        <View contentContainerStyle={{flexGrow: 1, paddingBottom: 100}}>
-          {(expireDate ? allPollens : freeUserNotifications)
+        <View contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}>
+          {(isPremium ? allPollens : freeUserNotifications)
             .filter(item => {
               const searchLower = search.toLowerCase();
               return (

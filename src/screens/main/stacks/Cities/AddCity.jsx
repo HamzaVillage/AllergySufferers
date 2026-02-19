@@ -7,7 +7,7 @@ import {
   SafeAreaView,
   Alert,
 } from 'react-native';
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import AppHeader from '../../../../components/AppHeader';
 import AppText from '../../../../components/AppTextComps/AppText';
 import {
@@ -22,17 +22,18 @@ import AppButton from '../../../../components/AppButton';
 import SocialAuthButton from '../../../../components/SocialAuthButton';
 import GooglePlacesTextInput from 'react-native-google-places-textinput';
 import BASE_URL from '../../../../utils/BASE_URL';
-import {useDispatch, useSelector} from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
-import {setAddCity} from '../../../../redux/Slices/MedicationSlice';
+import { setAddCity } from '../../../../redux/Slices/MedicationSlice';
 import Toast from 'react-native-toast-message';
 import moment from 'moment';
 
-const AddCity = ({navigation}) => {
+const AddCity = ({ navigation }) => {
   const dispatch = useDispatch();
   const userdata = useSelector(state => state.auth.user);
   const allMyCity = useSelector(state => state?.medications?.allMyCity);
   const expireDate = useSelector(state => state.auth.expireDate);
+  const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
   const [detail, setDetil] = useState();
   const [cityLoader, setCityLoader] = useState(false);
 
@@ -40,14 +41,14 @@ const AddCity = ({navigation}) => {
 
 
   const addNewCity = () => {
-    if (!expireDate) {
-      
+    if (!isPremium) {
+
       const isManualAddedCount = allMyCity.filter(
         state => state?.currentLocation == false,
       );
-      
+
       if (isManualAddedCount?.length >= 2) {
-        Alert.alert('You can only add 2 cities with the free version','To add up to 5 cities please subscribe to Premium.');
+        Alert.alert('You can only add 2 cities with the free version', 'To add up to 5 cities please subscribe to Premium.');
         return;
       }
     }
@@ -120,8 +121,8 @@ const AddCity = ({navigation}) => {
   };
 
   return (
-    <SafeAreaView style={{flex: 1}}>
-      <View style={{padding: 20}}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <View style={{ padding: 20 }}>
         <AppHeader
           heading="Add City"
           subheading="Pollen Forecast"
@@ -156,7 +157,7 @@ const AddCity = ({navigation}) => {
             padding: 10,
             marginTop: 20,
           }}>
-          <View style={{gap: 10}}>
+          <View style={{ gap: 10 }}>
             <AppButton
               title={'Add city'}
               bgColor={AppColors.BTNCOLOURS}

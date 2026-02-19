@@ -11,7 +11,7 @@ import {
   Animated,
   Image,
 } from 'react-native';
-import React, {useEffect, useRef, useState} from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import AppHeader from '../../../components/AppHeader';
 // import {BarChart, LineChart} from 'react-native-chart-kit';
 import AppColors from '../../../utils/AppColors';
@@ -23,7 +23,7 @@ import {
 import AppText from '../../../components/AppTextComps/AppText';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import BASE_URL from '../../../utils/BASE_URL';
-import {useSelector} from 'react-redux';
+import { useSelector } from 'react-redux';
 import axios from 'axios';
 import moment from 'moment';
 import DatePicker from 'react-native-date-picker';
@@ -39,12 +39,13 @@ import SubscribeBar from '../../../components/SubscribeBar';
 import GetAllLocation from '../../../global/GetAllLocation';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {ApiCallWithUserId} from '../../../global/ApiCall';
+import { ApiCallWithUserId } from '../../../global/ApiCall';
 
-const DataVisualizer = ({navigation}) => {
+const DataVisualizer = ({ navigation }) => {
   const screenWidth = Dimensions.get('window').width;
   const userData = useSelector(state => state.auth.user);
   const expireDate = useSelector(state => state.auth.expireDate);
+  const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
 
   const [type, setType] = useState('allergens');
   const [medicationData, setMedicationsData] = useState();
@@ -101,7 +102,7 @@ const DataVisualizer = ({navigation}) => {
   }, [selecteddate]);
 
   const setMedicationLoading = (id, isLoading) => {
-    setMedicationLoadingMap(prev => ({...prev, [id]: isLoading}));
+    setMedicationLoadingMap(prev => ({ ...prev, [id]: isLoading }));
   };
 
   const getAllAllergens = () => {
@@ -113,7 +114,7 @@ const DataVisualizer = ({navigation}) => {
       method: 'get',
       maxBodyLength: Infinity,
       url: `${BASE_URL}/allergy_data/v1/user/${userData?.id}/get_all_allergens`,
-      headers: {'Cache-Control': 'no-cache', Pragma: 'no-cache', Expires: '0'},
+      headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache', Expires: '0' },
     };
 
     axios
@@ -289,7 +290,7 @@ const DataVisualizer = ({navigation}) => {
       .post(
         `${BASE_URL}/allergy_data/v1/user/${userData?.id}/get_medication_records`,
         data,
-        {headers: {'Content-Type': 'application/json'}},
+        { headers: { 'Content-Type': 'application/json' } },
       )
       .then(response => {
         const allentriesArr = response.data.entries.items || [];
@@ -325,7 +326,7 @@ const DataVisualizer = ({navigation}) => {
               label: index === 0 ? dateLabel : '',
               // labelWidth: chartSpacing,
               labelWidth: 20,
-              labelTextStyle: {color: 'gray'},
+              labelTextStyle: { color: 'gray' },
               // spacing: 10,
               spacing: responsiveWidth(1.25),
             });
@@ -401,7 +402,7 @@ const DataVisualizer = ({navigation}) => {
           const chartLineData = {};
           Object.keys(apiData).forEach(key => {
             if (key !== 'dates' && key !== 'symptom_level') {
-              chartLineData[key] = apiData[key].map(val => ({value: val}));
+              chartLineData[key] = apiData[key].map(val => ({ value: val }));
             }
           });
 
@@ -574,7 +575,7 @@ const DataVisualizer = ({navigation}) => {
       await axios.post(
         `${BASE_URL}/allergy_data/v1/user/${userData?.id}/add_medication_units`,
         data,
-        {headers: {'Content-Type': 'application/json'}},
+        { headers: { 'Content-Type': 'application/json' } },
       );
 
       await getMedicationApi();
@@ -601,7 +602,7 @@ const DataVisualizer = ({navigation}) => {
       await axios.post(
         `${BASE_URL}/allergy_data/v1/user/${userData?.id}/remove_medication_units`,
         data,
-        {headers: {'Content-Type': 'application/json'}},
+        { headers: { 'Content-Type': 'application/json' } },
       );
 
       await getMedicationApi();
@@ -653,7 +654,7 @@ const DataVisualizer = ({navigation}) => {
   };
 
   return (
-    <SafeAreaView style={{flex: 1}}>
+    <SafeAreaView style={{ flex: 1 }}>
       <ScrollView
         contentContainerStyle={{
           padding: 20,
@@ -670,7 +671,7 @@ const DataVisualizer = ({navigation}) => {
         />
 
         {startDate && endDate && (
-          <View style={{marginTop: 20, marginBottom: 20}}>
+          <View style={{ marginTop: 20, marginBottom: 20 }}>
             <AppText
               title={`${moment(startDate).format('MMM DD')} - ${moment(
                 endDate,
@@ -682,7 +683,7 @@ const DataVisualizer = ({navigation}) => {
           </View>
         )}
 
-        {expireDate ? (
+        {isPremium ? (
           <>
             {DataVisualizerLoader == true ? (
               <View
@@ -699,7 +700,7 @@ const DataVisualizer = ({navigation}) => {
                   <View>
                     <ScrollView
                       horizontal={true}
-                      style={{height: responsiveHeight(30)}}>
+                      style={{ height: responsiveHeight(30) }}>
                       {/* <View
                         style={{
                           position: 'absolute',
@@ -839,20 +840,20 @@ const DataVisualizer = ({navigation}) => {
                         spacing={responsiveWidth(7.5)}
                         formatYLabel={label => parseFloat(label).toFixed(0)}
                         stepValue={1}
-                      /> 
-                      <View style={{flexDirection:'row', position:'absolute', zIndex:100, bottom:0, marginLeft:responsiveWidth(17.5),}}>
-                        
+                      />
+                      <View style={{ flexDirection: 'row', position: 'absolute', zIndex: 100, bottom: 0, marginLeft: responsiveWidth(17.5), }}>
+
                         {
 
-                          AllDayNumber?.map((item)=>{
-                            return(
-                              <View style={{backgroundColor:'white', width:responsiveWidth(30),}}>
-                                <AppText title={item} textSize={2}/>
+                          AllDayNumber?.map((item) => {
+                            return (
+                              <View style={{ backgroundColor: 'white', width: responsiveWidth(30), }}>
+                                <AppText title={item} textSize={2} />
                               </View>
                             )
                           })
                         }
-                      </View> 
+                      </View>
                     </ScrollView>
 
                     <View
@@ -898,13 +899,13 @@ const DataVisualizer = ({navigation}) => {
               }}
             />
 
-            <View style={{gap: 20}}>
+            <View style={{ gap: 20 }}>
               <View>
                 <AppText title={'Allergens'} textSize={2} textFontWeight />
                 <FlatList
                   data={takingMedications}
                   keyExtractor={item => item?.id?.toString()}
-                  renderItem={({item, index}) => (
+                  renderItem={({ item, index }) => (
                     <View
                       style={{
                         height: responsiveHeight(6),
@@ -941,7 +942,7 @@ const DataVisualizer = ({navigation}) => {
               </View>
 
               {pickedCity && (
-                <View style={{gap: 10}}>
+                <View style={{ gap: 10 }}>
                   <AppText title={'City'} textSize={2} textFontWeight />
                   <View
                     style={{
@@ -1056,7 +1057,7 @@ const DataVisualizer = ({navigation}) => {
             </View>
 
             {pollenLoader && (
-              <View style={{marginTop: 30}}>
+              <View style={{ marginTop: 30 }}>
                 <ActivityIndicator size={'large'} color={AppColors.BLACK} />
               </View>
             )}
@@ -1069,7 +1070,7 @@ const DataVisualizer = ({navigation}) => {
                     marginTop: 20,
                     marginBottom: 20,
                   }}
-                  renderItem={({item}) => {
+                  renderItem={({ item }) => {
                     return (
                       <View
                         style={{
@@ -1134,7 +1135,7 @@ const DataVisualizer = ({navigation}) => {
               <View>
                 <FlatList
                   data={todayPollensData}
-                  renderItem={({item}) => {
+                  renderItem={({ item }) => {
                     return (
                       <TouchableOpacity
                         onPress={() => addAllergens(item)}
@@ -1165,7 +1166,7 @@ const DataVisualizer = ({navigation}) => {
               <View>
                 <FlatList
                   data={allCities}
-                  renderItem={({item}) => {
+                  renderItem={({ item }) => {
                     return (
                       <TouchableOpacity
                         onPress={() => SelectLocation(item)}
@@ -1197,7 +1198,7 @@ const DataVisualizer = ({navigation}) => {
           </>
         ) : (
           <View
-            style={{height: responsiveHeight(30), justifyContent: 'center'}}>
+            style={{ height: responsiveHeight(30), justifyContent: 'center' }}>
             <SubscribeBar
               title="Subscribe Now to access data visualizer"
               title2={'Unlock Full Access to data visualizer'}

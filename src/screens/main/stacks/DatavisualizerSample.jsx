@@ -59,6 +59,7 @@ const DatavisualizerSample = ({ navigation }) => {
 
   const userData = useSelector(state => state?.auth?.user);
   const expireDate = useSelector(state => state?.auth?.expireDate);
+  const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
   const allActiveMedicationRedux = useSelector(
     state => state?.medications?.ActiveMedications,
   );
@@ -137,7 +138,7 @@ const DatavisualizerSample = ({ navigation }) => {
   }, [activeCity, MedicationnRecord, allActiveMedicationRedux]);
 
   useEffect(() => {
-    if (expireDate) {
+    if (isPremium) {
       if (allActiveMedicationRedux?.length === 0) {
         getApiDataAndSaveToRedux();
       }
@@ -776,7 +777,7 @@ const DatavisualizerSample = ({ navigation }) => {
   const scaleY = value => chartHeight - (value / maxYValue) * chartHeight;
 
   const lineData = PrimaryLineData?.map((d, i) => ({
-    x: i == 0 ? 0.1 * responsiveWidth(30) : i * responsiveWidth(30),
+    x: (i + 0.5) * responsiveWidth(29),
     y: scaleY(d.value),
   }));
 
@@ -784,28 +785,28 @@ const DatavisualizerSample = ({ navigation }) => {
   const points = lineData?.map(p => `${p.x},${p.y}`).join(' ');
 
   const secondLineData = SecondaryLineData?.map((d, i) => ({
-    x: i == 0 ? 0.1 * responsiveWidth(30) : i * responsiveWidth(30),
+    x: (i + 0.5) * responsiveWidth(29),
     y: scaleY(d.value),
   }));
   const secondpoints = secondLineData?.map(p => `${p.x},${p.y}`).join(' ');
 
   //third
   const newthirdLineData = thirdLineData?.map((d, i) => ({
-    x: i == 0 ? 0.1 * responsiveWidth(30) : i * responsiveWidth(30),
+    x: (i + 0.5) * responsiveWidth(29),
     y: scaleY(d.value),
   }));
   const thirdpoints = newthirdLineData?.map(p => `${p.x},${p.y}`).join(' ');
 
   //fourth
   const newfourthLineData = fourthLineData?.map((d, i) => ({
-    x: i == 0 ? 0.1 * responsiveWidth(30) : i * responsiveWidth(30),
+    x: (i + 0.5) * responsiveWidth(29),
     y: scaleY(d.value),
   }));
   const fourthpoints = newfourthLineData?.map(p => `${p.x},${p.y}`).join(' ');
 
   //fifth
   const newfifithLineData = FifthLineData?.map((d, i) => ({
-    x: i == 0 ? 0.1 * responsiveWidth(30) : i * responsiveWidth(30),
+    x: (i + 0.5) * responsiveWidth(29),
     y: scaleY(d.value),
   }));
   const fifthpoints = newfifithLineData?.map(p => `${p.x},${p.y}`).join(' ');
@@ -837,7 +838,7 @@ const DatavisualizerSample = ({ navigation }) => {
           <ActivityIndicator size={'small'} color={AppColors.BLACK} />
         )}
 
-        {expireDate ? (
+        {isPremium ? (
           <>
             {startDate && endDate && (
               <View
@@ -920,7 +921,7 @@ const DatavisualizerSample = ({ navigation }) => {
                         style={{
                           position: 'absolute',
                           top: 0,
-                          marginLeft: responsiveWidth(3),
+                          marginLeft: responsiveWidth(3.5),
                           flexDirection: 'row',
                           zIndex: 100,
                         }}>
@@ -934,17 +935,11 @@ const DatavisualizerSample = ({ navigation }) => {
                           };
 
                           return (
-                            // <View
-                            //   style={{
-                            //     width: chartSpacing,
-                            //     alignItems: 'center',
-                            //   }}>
                             <View
+                              key={index}
                               style={{
                                 width: responsiveWidth(29),
-                                alignItems: 'flex-start',
-                                // borderWidth:1,
-                                // backgroundColor:'red'
+                                alignItems: 'center',
                               }}>
                               <Image
                                 source={emojiMap[item.value]}
@@ -1011,18 +1006,16 @@ const DatavisualizerSample = ({ navigation }) => {
                         style={{
                           position: 'absolute',
                           zIndex: 100,
-                          marginLeft: responsiveWidth(3),
+                          marginLeft: responsiveWidth(3.5),
                           bottom: -0,
                         }}>
                         <FlatList
                           data={MedicationnRecord?.filter(res => res.label)}
-                          contentContainerStyle={{
-                            marginLeft: responsiveWidth(3),
-                          }}
+                          contentContainerStyle={{}}
                           horizontal
                           renderItem={({ item, index }) => {
                             return (
-                              <View style={{ width: responsiveWidth(30) }}>
+                              <View style={{ width: responsiveWidth(29), alignItems: 'center' }}>
                                 <AppText title={item.label} textSize={2} />
                               </View>
                             );
@@ -1037,7 +1030,7 @@ const DatavisualizerSample = ({ navigation }) => {
                         style={{
                           position: 'absolute',
                           zIndex: 11,
-                          marginLeft: responsiveWidth(4),
+                          marginLeft: responsiveWidth(3.5),
                         }}>
                         <Svg
                           width={responsiveWidth(650)}
@@ -1064,7 +1057,7 @@ const DatavisualizerSample = ({ navigation }) => {
                         style={{
                           position: 'absolute',
                           zIndex: 11,
-                          marginLeft: responsiveWidth(4),
+                          marginLeft: responsiveWidth(3.5),
                         }}>
                         <Svg
                           width={responsiveWidth(650)}
@@ -1094,7 +1087,7 @@ const DatavisualizerSample = ({ navigation }) => {
                         style={{
                           position: 'absolute',
                           zIndex: 11,
-                          marginLeft: responsiveWidth(4),
+                          marginLeft: responsiveWidth(3.5),
                         }}>
                         <Svg
                           width={responsiveWidth(650)}
@@ -1126,7 +1119,7 @@ const DatavisualizerSample = ({ navigation }) => {
                         style={{
                           position: 'absolute',
                           zIndex: 11,
-                          marginLeft: responsiveWidth(4),
+                          marginLeft: responsiveWidth(3.5),
                         }}>
                         <Svg
                           width={responsiveWidth(650)}
@@ -1156,7 +1149,7 @@ const DatavisualizerSample = ({ navigation }) => {
                         style={{
                           position: 'absolute',
                           zIndex: 11,
-                          marginLeft: responsiveWidth(4),
+                          marginLeft: responsiveWidth(3.5),
                         }}>
                         <Svg
                           width={responsiveWidth(650)}
@@ -1184,26 +1177,15 @@ const DatavisualizerSample = ({ navigation }) => {
                       style={{
                         position: 'absolute',
                         zIndex: 10,
-                        bottom: Platform.OS === 'ios' ? responsiveHeight(5.5) : responsiveHeight(5),
-                        // backgroundColor: AppColors.rightArrowCOlor,
+                        bottom: Platform.OS === 'ios' ? responsiveHeight(3.5) : responsiveHeight(3),
                         left: responsiveWidth(1.9),
                         gap: Platform.OS == 'ios' ? 32 : 30,
-                        justifyContent: 'space-between',
+                        flexDirection: 'column-reverse',
                         borderRightWidth: 1,
                         paddingRight: 5,
                       }}>
-                      {/* <AppText
-                        title={8}
-                        textSize={2}
-                        textColor={AppColors.LIGHTGRAY}
-                      /> */}
                       <AppText
-                        title={6}
-                        textSize={2}
-                        textColor={AppColors.LIGHTGRAY}
-                      />
-                      <AppText
-                        title={4}
+                        title={0}
                         textSize={2}
                         textColor={AppColors.LIGHTGRAY}
                       />
@@ -1213,7 +1195,12 @@ const DatavisualizerSample = ({ navigation }) => {
                         textColor={AppColors.LIGHTGRAY}
                       />
                       <AppText
-                        title={0}
+                        title={4}
+                        textSize={2}
+                        textColor={AppColors.LIGHTGRAY}
+                      />
+                      <AppText
+                        title={6}
                         textSize={2}
                         textColor={AppColors.LIGHTGRAY}
                       />

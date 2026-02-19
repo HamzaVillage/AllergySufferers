@@ -1,4 +1,4 @@
-import {View, Text, Image} from 'react-native';
+import { View, Text, Image } from 'react-native';
 import React from 'react';
 import AppImages from '../assets/images/AppImages';
 import {
@@ -40,7 +40,7 @@ const isPollenorSporesVal = (val: any, TextBottom: any) => {
       return '201+ grains/m³';
     }
   } else {
-      if (val == 'spore' && TextBottom == 'Low') {
+    if (val == 'spore' && TextBottom == 'Low') {
       return '1-1000 grains/m³';
     } else if (val == 'spore' && TextBottom == 'Moderate') {
       return '1001-2500 grains/m³';
@@ -63,20 +63,20 @@ const SpeedoMeter = ({
   isPollenorSpores,
 }: props) => {
   return (
-    <View style={{alignItems: 'center', justifyContent: 'center'}}>
+    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
       <Image
         source={
           TextBottom == 'Very High'
             ? AppImages.meterdarkred
             : TextBottom == 'High'
-            ? AppImages.meterred
-            : TextBottom == 'Moderate'
-            ? AppImages.meteryellow
-            : TextBottom == 'Low'
-            ? AppImages.metergreen
-            : TextBottom == 'None'
-            ? AppImages.meternone
-            : AppImages.metergreen
+              ? AppImages.meterred
+              : TextBottom == 'Moderate'
+                ? AppImages.meteryellow
+                : TextBottom == 'Low'
+                  ? AppImages.metergreen
+                  : TextBottom == 'None'
+                    ? AppImages.meternone
+                    : AppImages.meternone
         }
         style={{
           // position: 'absolute',

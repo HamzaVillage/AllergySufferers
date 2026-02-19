@@ -47,6 +47,7 @@ const MedicationSample = ({ navigation }) => {
   const userData = useSelector(state => state.auth.user);
 
   const expireDate = useSelector(state => state.auth.expireDate);
+  const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
 
   const allActiveMedicationRedux = useSelector(
     state => state.medications.ActiveMedications,
@@ -855,7 +856,7 @@ const MedicationSample = ({ navigation }) => {
           {savingDataLoader && (
             <ActivityIndicator size={'small'} color={AppColors.BLACK} />
           )}
-          {expireDate ? (
+          {isPremium ? (
             <>
               {memoizedMedicationList()}
 
@@ -882,7 +883,7 @@ const MedicationSample = ({ navigation }) => {
             </View>
           )}
 
-          {expireDate && (
+          {isPremium && (
             <View style={{ marginTop: 20, gap: 20 }}>
               <AppButton
                 title={'GO TO DATA VISUALIZER'}

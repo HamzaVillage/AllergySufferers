@@ -10,7 +10,7 @@ import {
   Image,
   ScrollView,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import AppHeader from '../../../../components/AppHeader';
 import AppText from '../../../../components/AppTextComps/AppText';
 import {
@@ -26,18 +26,18 @@ import SocialAuthButton from '../../../../components/SocialAuthButton';
 import AppTextInput from '../../../../components/AppTextInput';
 import Octicons from 'react-native-vector-icons/Octicons';
 import BASE_URL from '../../../../utils/BASE_URL';
-import {useDispatch, useSelector} from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import {
   NestableScrollContainer,
   NestableDraggableFlatList,
 } from 'react-native-draggable-flatlist';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AppImages from '../../../../assets/images/AppImages';
 import moment from 'moment';
 import DatePicker from 'react-native-date-picker';
-import {ApiCallWithUserId} from '../../../../global/ApiCall';
+import { ApiCallWithUserId } from '../../../../global/ApiCall';
 import {
   deleteActiveMedication,
   removeCurrentActiveMedication,
@@ -49,7 +49,7 @@ import Toast from 'react-native-toast-message';
 import SubscribeBar from '../../../../components/SubscribeBar';
 // import { NestableScrollContainer, NestableDraggableFlatList } from "react-native-draggable-flatlist"
 
-const ManageMedications = ({navigation}) => {
+const ManageMedications = ({ navigation }) => {
   const userData = useSelector(state => state.auth.user);
   const dispatch = useDispatch();
   const allActiveMedicationRedux = useSelector(
@@ -60,8 +60,9 @@ const ManageMedications = ({navigation}) => {
   );
 
   const expireDate = useSelector(state => state.auth.expireDate);
-      const [savingDataLoader, setSavingDataLoader] = useState(false);
-  
+  const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
+  const [savingDataLoader, setSavingDataLoader] = useState(false);
+
   // console.log('ActiveMedications', ActiveMedications); 
 
   // const [activeMedication, setActiveMedication] = useState(
@@ -79,19 +80,19 @@ const ManageMedications = ({navigation}) => {
 
   const [loader, setLoader] = useState(true)
   const [OtherLoader, setOtherLoader] = useState(false)
-  
+
   useEffect(() => {
     setLoader(false)
 
   }, [ActiveMedications]);
 
-  useEffect(()=>{
-    if(expireDate){ 
-      if(ActiveMedications?.length === 0){  
+  useEffect(() => {
+    if (isPremium) {
+      if (ActiveMedications?.length === 0) {
         getApiDataAndSaveToRedux()
       }
     }
-  },[ActiveMedications])
+  }, [ActiveMedications])
 
   const deleteActiveMedicationRedux = async medData => {
     // dispatch( deleteActiveMedication(medData))
@@ -106,7 +107,7 @@ const ManageMedications = ({navigation}) => {
       'post',
       'delete_medication',
       userData?.id,
-      {data: medData.id},
+      { data: medData.id },
     );
 
     Toast.show({
@@ -117,12 +118,12 @@ const ManageMedications = ({navigation}) => {
     });
   };
 
-  
+
   const sortMedication = async data => {
     // Alert.alert("draged?")
     setOtherLoader(true)
-    
-    
+
+
     const sortnow = await updateSortedCurrentDateMedsInList(ActiveMedications, data)
     dispatch(setActiveMedication(sortnow))
     setOtherLoader(false)
@@ -130,85 +131,85 @@ const ManageMedications = ({navigation}) => {
 
 
 
-const updateSortedCurrentDateMedsInList = async (fullList, sortedCurrentMeds) => {
-  const currentIndexes = await getCurrentDateIndexes(fullList, selecteddate);
+  const updateSortedCurrentDateMedsInList = async (fullList, sortedCurrentMeds) => {
+    const currentIndexes = await getCurrentDateIndexes(fullList, selecteddate);
 
-  const newList = [...fullList]; // copy full list
+    const newList = [...fullList]; // copy full list
 
-  currentIndexes.forEach(({ index }, i) => {
-    newList[index] = sortedCurrentMeds[i]; // replace only current date items
-  });
+    currentIndexes.forEach(({ index }, i) => {
+      newList[index] = sortedCurrentMeds[i]; // replace only current date items
+    });
 
-  return newList;
-};
+    return newList;
+  };
 
 
   const getCurrentDateIndexes = array => {
     const currentDate = moment(new Date()).format('YYYY-MM-DD');
 
     return array
-      .map((item, index) => ({item, index})) // attach index to each item
-      .filter(({item}) => item.date == currentDate); // keep only current date items
+      .map((item, index) => ({ item, index })) // attach index to each item
+      .filter(({ item }) => item.date == currentDate); // keep only current date items
   };
 
   const currentDateMeds = ActiveMedications?.filter(
-  item => item.date === selecteddate,
-);
-
-  
+    item => item.date === selecteddate,
+  );
 
 
-      const getApiDataAndSaveToRedux = async () => {
-        if (allActiveMedicationRedux.length === 0) {
-          setSavingDataLoader(true);
-    
-          // Alert.alert("This function calls getApiDataAndSaveToRedux")
-          const getActiveMedicationData = await ApiCallWithUserId(
-            'post',
-            'get_medication_records',
-            userData?.id,
-          );
-    
-    
-    
-          if (getActiveMedicationData?.entries?.items?.length > 0) {
-            console.log(
-              'getActiveMedicationData',
-              getActiveMedicationData?.entries?.items,
-            );
-            dispatch(setActiveMedication(getActiveMedicationData?.entries?.items));
-            setSavingDataLoader(false);
-          } else {
-            setSavingDataLoader(false);
-          }
-          return;
-        }else{
-          setSavingDataLoader(false);
-        }
-      };
+
+
+  const getApiDataAndSaveToRedux = async () => {
+    if (allActiveMedicationRedux.length === 0) {
+      setSavingDataLoader(true);
+
+      // Alert.alert("This function calls getApiDataAndSaveToRedux")
+      const getActiveMedicationData = await ApiCallWithUserId(
+        'post',
+        'get_medication_records',
+        userData?.id,
+      );
+
+
+
+      if (getActiveMedicationData?.entries?.items?.length > 0) {
+        console.log(
+          'getActiveMedicationData',
+          getActiveMedicationData?.entries?.items,
+        );
+        dispatch(setActiveMedication(getActiveMedicationData?.entries?.items));
+        setSavingDataLoader(false);
+      } else {
+        setSavingDataLoader(false);
+      }
+      return;
+    } else {
+      setSavingDataLoader(false);
+    }
+  };
 
 
 
 
   return (
-    <SafeAreaView style={{flex: 1}}>
-      <ScrollView contentContainerStyle={{flexGrow: 1, paddingBottom: 200}}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 200 }}>
         <View>
           {
             savingDataLoader && (
               <View>
-                <ActivityIndicator size={'large'} color={AppColors.BLACK}/>
+                <ActivityIndicator size={'large'} color={AppColors.BLACK} />
               </View>
             )
           }
 
-          <GestureHandlerRootView style={{flex: 1}}>
-            <View style={{padding: 20}}>
+          <GestureHandlerRootView style={{ flex: 1 }}>
+            <View style={{ padding: 20 }}>
               <AppHeader heading={`Manage ${'\n'}Medications`} goBack />
 
-           
 
-              <View style={{gap: 10}}>
+
+              <View style={{ gap: 10 }}>
                 <AppText
                   textSize={'Active Medication'}
                   textColor={AppColors.BLACK}
@@ -216,17 +217,17 @@ const updateSortedCurrentDateMedsInList = async (fullList, sortedCurrentMeds) =>
                 />
 
                 {loader && (
-              <ActivityIndicator size={'large'} color={AppColors.BLACK} />
-            )}
+                  <ActivityIndicator size={'large'} color={AppColors.BLACK} />
+                )}
 
-                {expireDate ? (
+                {isPremium ? (
                   <>
                     {currentDateMeds ? (
                       <NestableScrollContainer>
                         <NestableDraggableFlatList
                           data={currentDateMeds}
-                          contentContainerStyle={{gap: 10}}
-                          renderItem={({item, drag, isActive}) => {
+                          contentContainerStyle={{ gap: 10 }}
+                          renderItem={({ item, drag, isActive }) => {
                             return (
                               <TouchableOpacity onLongPress={drag}>
                                 <AppTextInput
@@ -253,7 +254,7 @@ const updateSortedCurrentDateMedsInList = async (fullList, sortedCurrentMeds) =>
                                                 ),
                                             },
                                           ],
-                                          {cancelable: false},
+                                          { cancelable: false },
                                         )
                                       }>
                                       <MaterialCommunityIcons
@@ -264,7 +265,7 @@ const updateSortedCurrentDateMedsInList = async (fullList, sortedCurrentMeds) =>
                                     </TouchableOpacity>
                                   }
                                   rightLogo={
-                                    <View style={{marginTop: 4}}>
+                                    <View style={{ marginTop: 4 }}>
                                       <Image
                                         source={AppImages.updown}
                                         style={{
@@ -280,7 +281,7 @@ const updateSortedCurrentDateMedsInList = async (fullList, sortedCurrentMeds) =>
                             );
                           }}
                           keyExtractor={(item, index) => index.toString()}
-                          onDragEnd={({data}) =>  sortMedication(data)}
+                          onDragEnd={({ data }) => sortMedication(data)}
                           dragEnabled={true}
                           activationDistance={10}
                         />
@@ -304,18 +305,18 @@ const updateSortedCurrentDateMedsInList = async (fullList, sortedCurrentMeds) =>
                 )}
               </View>
 
-              <View style={{marginTop: 20, gap: 10}}>
-                {expireDate && (
+              <View style={{ marginTop: 20, gap: 10 }}>
+                {isPremium && (
 
-                <AppButton
-                  title={'Click here to see medication list'}
-                  
-                  bgColor={AppColors.BTNCOLOURS}
-                  RightColour={AppColors.rightArrowCOlor}
-                  handlePress={() => navigation.navigate('AddMedications')}
-                  isLoading={savingDataLoader}
-                />
-                ) }
+                  <AppButton
+                    title={'Click here to see medication list'}
+
+                    bgColor={AppColors.BTNCOLOURS}
+                    RightColour={AppColors.rightArrowCOlor}
+                    handlePress={() => navigation.navigate('AddMedications')}
+                    isLoading={savingDataLoader}
+                  />
+                )}
               </View>
             </View>
           </GestureHandlerRootView>

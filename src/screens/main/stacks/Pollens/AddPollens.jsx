@@ -9,7 +9,7 @@ import {
   SafeAreaView,
   Alert,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import AppHeader from '../../../../components/AppHeader';
 import AppText from '../../../../components/AppTextComps/AppText';
 import {
@@ -27,16 +27,17 @@ import Octicons from 'react-native-vector-icons/Octicons';
 import BASE_URL from '../../../../utils/BASE_URL';
 import axios from 'axios';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import {useSelector} from 'react-redux';
+import { useSelector } from 'react-redux';
 import Toast from 'react-native-toast-message';
 
-const AddPollens = ({navigation}) => {
+const AddPollens = ({ navigation }) => {
   const userData = useSelector(state => state.auth.user);
   const [allPollens, setALlPollens] = useState([]);
   const [search, setSearch] = useState('');
   const [loader, setLoader] = useState(false);
 
   const expireDate = useSelector(state => state.auth.expireDate);
+  const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
 
   const [PollenLoader, setPollenApiLoader] = useState(false);
   useEffect(() => {
@@ -69,7 +70,7 @@ const AddPollens = ({navigation}) => {
   };
 
   const setPollenApi = item => {
-    if (!expireDate) {
+    if (!isPremium) {
       Alert.alert(
         'Subscribe', // Title of the alert
         'Subscribe to add the pollens', // Message
@@ -85,7 +86,7 @@ const AddPollens = ({navigation}) => {
             // You can replace the above with your subscription logic
           },
         ],
-        {cancelable: false},
+        { cancelable: false },
       );
       return;
     }
@@ -131,11 +132,11 @@ const AddPollens = ({navigation}) => {
   };
 
   return (
-    <SafeAreaView style={{flex: 1}}>
-      <View style={{padding: 20}}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <View style={{ padding: 20 }}>
         <AppHeader heading="Add pollen and spores" goBack />
 
-        <View style={{gap: 10}}>
+        <View style={{ gap: 10 }}>
           <AppTextInput
             inputPlaceHolder={'Search Pollens'}
             textInput={true}
@@ -146,7 +147,7 @@ const AddPollens = ({navigation}) => {
 
         {loader && (
           <View
-            style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
+            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
             <ActivityIndicator size={'large'} color={AppColors.BLACK} />
           </View>
         )}
@@ -163,7 +164,7 @@ const AddPollens = ({navigation}) => {
           </View>
         )}
 
-        <ScrollView contentContainerStyle={{flexGrow: 1, paddingBottom: responsiveHeight(35)}}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: responsiveHeight(35) }}>
           {allPollens
             .filter(
               item =>

@@ -1,9 +1,9 @@
-import {View, Text, Image} from 'react-native';
+import { View, Text, Image } from 'react-native';
 import React from 'react';
 import AppText from './AppTextComps/AppText';
 import AppColors from '../utils/AppColors';
 import AppImages from '../assets/images/AppImages';
-import {responsiveWidth} from '../utils/Responsive_Dimensions';
+import { responsiveWidth } from '../utils/Responsive_Dimensions';
 
 type props = {
   index?: Number;
@@ -21,7 +21,8 @@ const PointPollenSpores = ({
   containerwidth,
 }: props) => {
   const getTheRoundColour = (level: any) => {
-    switch (level) {
+    const numLevel = Number(level);
+    switch (numLevel) {
       case 4:
         return '#D72626';
       case 3:
@@ -70,7 +71,7 @@ const PointPollenSpores = ({
             justifyContent: 'space-between',
             width: containerwidth ? responsiveWidth(70) : responsiveWidth(80),
           }}>
-          <View style={{flexDirection: 'row', alignItems: 'center', gap: 5}}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
             <View
               style={{
                 height: 20,
@@ -105,7 +106,7 @@ const PointPollenSpores = ({
               source={
                 item.type == 'spore' ? AppImages.spores : AppImages.pollen
               }
-              style={{height: 40, width: 40, resizeMode: 'contain'}}
+              style={{ height: 40, width: 40, resizeMode: 'contain' }}
             />
           </View>
         </View>

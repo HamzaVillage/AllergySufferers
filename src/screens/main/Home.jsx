@@ -11,7 +11,7 @@ import {
   Alert,
   StyleSheet,
 } from 'react-native';
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import LinearGradient from 'react-native-linear-gradient';
 import {
   responsiveFontSize,
@@ -27,7 +27,7 @@ import AppImages from '../../assets/images/AppImages';
 import SpeedoMeter from '../../components/SpeedoMeter';
 import SelectionButton from '../../components/SelectionButton';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import {useDispatch, useSelector} from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import BASE_URL from '../../utils/BASE_URL';
 import DatePicker from 'react-native-date-picker';
@@ -39,9 +39,9 @@ import AppButton from '../../components/AppButton';
 import PointPollenSpores from '../../components/PointPollenSpores';
 // import AddCityApi from '../../global/AddCityApi';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import {useFocusEffect, useNavigation} from '@react-navigation/native';
-import {GetCurrentLocation} from '../../global/GetCurrentLocation';
-import {GetCityName} from '../../global/GetCityName';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { GetCurrentLocation } from '../../global/GetCurrentLocation';
+import { GetCityName } from '../../global/GetCityName';
 import {
   setAddCity,
   setAllCityFromApi,
@@ -60,16 +60,16 @@ import {
   setWatchPaidTut,
 } from '../../redux/Slices/AuthSlice';
 import SubscribeNow from '../../global/SubscribeNow';
-import {ApiCallWithUserId} from '../../global/ApiCall';
+import { ApiCallWithUserId } from '../../global/ApiCall';
 import {
   clearForaCastSlive,
   removeForeCastSlice,
   setForeCastSlice,
   updateYesterdaySavedForcast,
 } from '../../redux/Slices/ForecastSlice';
-import {BannerAd, BannerAdSize, TestIds} from 'react-native-google-mobile-ads';
+import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 
-const Home = ({navigation}) => {
+const Home = ({ navigation }) => {
   const bannerAdUnitId = __DEV__
     ? TestIds.BANNER
     : 'ca-app-pub-8551767929999166/4471222920'; // replace with your real ad id
@@ -84,15 +84,19 @@ const Home = ({navigation}) => {
   const transactionId = useSelector(state => state?.auth?.transactionId);
   const transactionDate = useSelector(state => state?.auth?.transactionDate);
   const subscriptionExpire = useSelector(state => state?.auth?.expireDate);
+  const expireDate = useSelector(state => state.auth.expireDate);
 
-  // console.log("AllForcast", AllForcast?.length)
+  // isPremium is true only if expireDate exists AND current date has not passed the expiry date
+  const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
+
+  // console.log("AllForcast", expireDate, isPremium, subscriptionType, transactionId, transactionDate)
 
   const watchFreeTut = useSelector(state => state?.auth?.WatchFreeTut);
   const watchPaidTut = useSelector(state => state?.auth?.WatchPaidTut);
 
   const sliderRef = useRef(null);
 
-  console.log('AllCities', AllCities);
+  // console.log('AllCities', AllCities);
   const sortCities = [...AllCities].sort((a, b) => {
     return (
       (b.currentLocation || b.isCurrentLocation ? 1 : 0) -
@@ -100,7 +104,6 @@ const Home = ({navigation}) => {
     );
   });
 
-  const expireDate = useSelector(state => state.auth.expireDate);
 
   const [fetchingCurrentLocation, setFechingCurrentLocation] = useState(false);
 
@@ -139,10 +142,10 @@ const Home = ({navigation}) => {
 
   const [message, setMessage] = useState('');
 
-  console.log('allForeCast===>',AllForcast)
+  // console.log('allForeCast===>', AllForcast)
 
   useEffect(() => {
-    if (expireDate) {
+    if (isPremium) {
       if (LoggedIn) {
         if (!watchPaidTut) {
           navigation.navigate('ViewAppGuide');
@@ -285,13 +288,13 @@ const Home = ({navigation}) => {
           if (
             AllForcast.some(f => f?.user?.locations?.closest?.name === city)
           ) {
-            dispatch(updateYesterdaySavedForcast({data: res, city}));
+            dispatch(updateYesterdaySavedForcast({ data: res, city }));
           }
         } else {
           if (
             !AllForcast.some(f => f?.user?.locations?.closest?.name === city)
           ) {
-            dispatch(setForeCastSlice({data: res, city}));
+            dispatch(setForeCastSlice({ data: res, city }));
           }
         }
 
@@ -469,12 +472,12 @@ const Home = ({navigation}) => {
       // console.log('foreaching', item, index);
 
       if (item.type === 'pollen' && !pollenHeaderAdded) {
-        Headings.push({type: 'header', title: 'Pollen', index: index});
+        Headings.push({ type: 'header', title: 'Pollen', index: index });
         pollenHeaderAdded = true;
       }
 
       if (item.type === 'spore' && !sporesHeaderAdded) {
-        Headings.push({type: 'header', title: 'Spores', index: index});
+        Headings.push({ type: 'header', title: 'Spores', index: index });
         sporesHeaderAdded = true;
       }
     });
@@ -484,7 +487,7 @@ const Home = ({navigation}) => {
 
   const settingData = SettingHeaders();
 
-const freeData = [
+  const freeData = [
     {
       id: 1,
       name: 'Total Spores',
@@ -550,9 +553,13 @@ const freeData = [
         ...data,
       }));
 
+      // console.log("pastArray.....", city, pastArray)
+      console.log("futureArray.....", city, futureArray)
       setPastPollenData(past);
       setTodayPollensData(today);
       setFuturePollenData(future);
+
+
 
       setIsPastArray(pastArray);
       setIsFutureArray(futureArray);
@@ -573,8 +580,8 @@ const freeData = [
             selected == 'Past'
               ? PastPollenData?.[PastDate]?.label
               : selected == 'Future'
-              ? FuturePollenData?.[FutureDate]?.label
-              : todayPollensData?.label,
+                ? FuturePollenData?.[FutureDate]?.label
+                : todayPollensData?.label,
           ),
           AppColors.WHITE,
         ]}
@@ -616,7 +623,7 @@ const freeData = [
                   marginTop: 30,
                 }}
                 showsVerticalScrollIndicator={false}>
-                {!expireDate && (
+                {!isPremium && (
                   <View style={styles.container}>
                     <BannerAd
                       unitId={bannerAdUnitId}
@@ -687,7 +694,7 @@ const freeData = [
                     showDoneButton={false}
                     showNextButton={false}
                     onSlideChange={index => getPollensData(sortCities, index)}
-                    renderItem={({item, index}) => {
+                    renderItem={({ item, index }) => {
                       return (
                         <>
                           <View
@@ -696,20 +703,20 @@ const freeData = [
                               justifyContent: 'space-between',
                               alignItems: 'center',
                             }}>
-                            <View style={{flexDirection: 'row', gap: 5}}>
+                            <View style={{ flexDirection: 'row', gap: 5 }}>
                               {item?.currentLocation ? (
                                 <FontAwesome6
                                   name={'location-dot'}
                                   size={responsiveFontSize(2)}
                                   color={AppColors.BLUE}
-                                  style={{marginTop: 6}}
+                                  style={{ marginTop: 6 }}
                                 />
                               ) : (
                                 <FontAwesome
                                   name={'map'}
                                   size={responsiveFontSize(2)}
                                   color={AppColors.BLUE}
-                                  style={{marginTop: 6}}
+                                  style={{ marginTop: 6 }}
                                 />
                               )}
                               <View>
@@ -770,8 +777,8 @@ const freeData = [
                                 selected == 'Past'
                                   ? PastPollenData?.[PastDate]?.label
                                   : selected == 'Future'
-                                  ? FuturePollenData?.[FutureDate]?.label
-                                  : todayPollensData?.label
+                                    ? FuturePollenData?.[FutureDate]?.label
+                                    : todayPollensData?.label
                               }
                             />
                           </View>
@@ -781,7 +788,7 @@ const freeData = [
                   />
                 )}
 
-                <View style={{flexDirection: 'row', gap: 5}}>
+                <View style={{ flexDirection: 'row', gap: 5 }}>
                   {activeLoader == true ? (
                     <View
                       style={{
@@ -793,14 +800,18 @@ const freeData = [
                       <ActivityIndicator
                         size={'large'}
                         color={AppColors.BLACK}
-                        style={{alignSelf: 'center'}}
+                        style={{ alignSelf: 'center' }}
                       />
                     </View>
                   ) : (
-                    <View style={{flexDirection: 'row'}}>
-                      {expireDate ? (
+                    <View style={{ flexDirection: 'row' }}>
+                      {isPremium ? (
                         <>
-                          {todayPollensData?.current?.length > 0 ? (
+                          {(selected === 'Past'
+                            ? ispastArray?.[0]?.current?.length > 0
+                            : selected === 'Future'
+                              ? isfutureArray?.[0]?.current?.length > 0
+                              : todayPollensData?.current?.length > 0) ? (
                             <FlatList
                               data={activePollen}
                               horizontal={true}
@@ -809,20 +820,53 @@ const freeData = [
                                 gap: 20,
                                 flexDirection: 'row',
                               }}
-                              renderItem={({item}) => {
-                                console.log(
-                                  'todayPollensData?.current',
-                                  todayPollensData?.current,
+                              renderItem={({ item }) => {
+                                // console.log(
+                                //   'todayPollensData?.current',
+                                //   todayPollensData?.current,
+                                // );
+                                const activeDataForDials =
+                                  selected === 'Past'
+                                    ? ispastArray?.[0]?.current
+                                    : selected === 'Future'
+                                      ? isfutureArray?.[0]?.current
+                                      : todayPollensData?.current;
+
+                                const index = (activeDataForDials || []).findIndex(
+                                  p =>
+                                    p.scientific_name?.toLowerCase() ===
+                                    item.name?.toLowerCase() ||
+                                    p.name?.toLowerCase() ===
+                                    item.common_name?.toLowerCase() ||
+                                    (item.common_name
+                                      ?.toLowerCase()
+                                      .includes('cedar') &&
+                                      p.name
+                                        ?.toLowerCase()
+                                        .includes('cedar')) ||
+                                    (item.common_name
+                                      ?.toLowerCase()
+                                      .includes('alder') &&
+                                      p.name
+                                        ?.toLowerCase()
+                                        .includes('alder')) ||
+                                    (item.common_name
+                                      ?.toLowerCase()
+                                      .includes('birch') &&
+                                      p.name
+                                        ?.toLowerCase()
+                                        .includes('birch')) ||
+                                    (item.common_name
+                                      ?.toLowerCase()
+                                      .includes('oak') &&
+                                      p.name
+                                        ?.toLowerCase()
+                                        .includes('oak')),
                                 );
-                                const index =
-                                  todayPollensData?.current.findIndex(
-                                    p => p.scientific_name === item.name,
-                                  );
-                                const todayPollenInAir =
-                                  todayPollensData?.current;
+                                const todayPollenInAir = activeDataForDials;
 
                                 return (
-                                  <View style={{gap: 10}}>
+                                  <View style={{ gap: 10 }}>
                                     <AppText
                                       title={item.common_name}
                                       textAlignment={'center'}
@@ -842,12 +886,12 @@ const freeData = [
                                         todayPollenInAir[index]?.level == 1
                                           ? 'Low'
                                           : todayPollenInAir[index]?.level == 2
-                                          ? 'Moderate'
-                                          : todayPollenInAir[index]?.level == 3
-                                          ? 'High'
-                                          : todayPollenInAir[index]?.level == 4
-                                          ? 'Very High'
-                                          : 'None'
+                                            ? 'Moderate'
+                                            : todayPollenInAir[index]?.level == 3
+                                              ? 'High'
+                                              : todayPollenInAir[index]?.level == 4
+                                                ? 'Very High'
+                                                : 'None'
                                       }
                                       isPollenorSpores={
                                         todayPollenInAir[index]?.type
@@ -867,9 +911,9 @@ const freeData = [
                                 gap: 20,
                                 flexDirection: 'row',
                               }}
-                              renderItem={({item}) => {
+                              renderItem={({ item }) => {
                                 return (
-                                  <View style={{gap: 10}}>
+                                  <View style={{ gap: 10 }}>
                                     <AppText
                                       title={item.name}
                                       textAlignment={'center'}
@@ -883,18 +927,7 @@ const freeData = [
                                       imgHeight={10}
                                       speedometerWidth={30}
                                       imageTop={-10}
-                                      TextBottom={
-                                        item?.level == 1
-                                          ? 'Low'
-                                          : item?.level == 2
-                                          ? 'Moderate'
-                                          : item?.level == 3
-                                          ? 'High'
-                                          : item?.level == 4
-                                          ? 'Very High'
-                                          : null
-                                      }
-                                      TempreaturePriority={'Moderate'}
+                                      TextBottom={'None'}
                                       TempreaturePriorityFontSize={1.6}
                                     />
                                   </View>
@@ -908,9 +941,9 @@ const freeData = [
                           <FlatList
                             data={freeData}
                             horizontal
-                            renderItem={({item}) => {
+                            renderItem={({ item }) => {
                               return (
-                                <View style={{gap: 10}}>
+                                <View style={{ gap: 10 }}>
                                   <AppText
                                     title={item.name}
                                     textAlignment={'center'}
@@ -930,12 +963,12 @@ const freeData = [
                                       item.value == 1
                                         ? 'Low'
                                         : item.value == 2
-                                        ? 'Moderate'
-                                        : item.value == 3
-                                        ? 'High'
-                                        : item.value == 4
-                                        ? 'Very High'
-                                        : 'None'
+                                          ? 'Moderate'
+                                          : item.value == 3
+                                            ? 'High'
+                                            : item.value == 4
+                                              ? 'Very High'
+                                              : 'None'
                                     }
                                     isPollenorSpores={item.type}
                                     TempreaturePriorityFontSize={1.6}
@@ -950,7 +983,7 @@ const freeData = [
                   )}
                 </View>
 
-                <View style={{flexDirection: 'row', gap: 10, marginBottom: 20}}>
+                <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
                   <SelectionButton
                     title="Past"
                     setSelected={() => setSelected('Past')}
@@ -995,12 +1028,12 @@ const freeData = [
                     )}
                     {selected == 'Past' ? (
                       <>
-                        {expireDate ? (
+                        {isPremium ? (
                           <FlatList
                             data={ispastArray}
-                            contentContainerStyle={{paddingTop: 100}}
+                            contentContainerStyle={{ paddingTop: 100 }}
                             inverted
-                            renderItem={({item, index}) => {
+                            renderItem={({ item, index }) => {
                               const pastPollenAndSpores = item?.current?.sort(
                                 (a, b) => {
                                   if (a.type !== b.type) {
@@ -1277,7 +1310,34 @@ const freeData = [
                                     {activePollen?.map(newItem => {
                                       const indexes = item.current.findIndex(
                                         active =>
-                                          active.name == newItem.common_name,
+                                          active.scientific_name?.toLowerCase() ===
+                                          newItem.name?.toLowerCase() ||
+                                          active.name?.toLowerCase() ===
+                                          newItem.common_name?.toLowerCase() ||
+                                          (newItem.common_name
+                                            ?.toLowerCase()
+                                            .includes('cedar') &&
+                                            active.name
+                                              ?.toLowerCase()
+                                              .includes('cedar')) ||
+                                          (newItem.common_name
+                                            ?.toLowerCase()
+                                            .includes('alder') &&
+                                            active.name
+                                              ?.toLowerCase()
+                                              .includes('alder')) ||
+                                          (newItem.common_name
+                                            ?.toLowerCase()
+                                            .includes('birch') &&
+                                            active.name
+                                              ?.toLowerCase()
+                                              .includes('birch')) ||
+                                          (newItem.common_name
+                                            ?.toLowerCase()
+                                            .includes('oak') &&
+                                            active.name
+                                              ?.toLowerCase()
+                                              .includes('oak')),
                                       );
 
                                       return (
@@ -1305,15 +1365,15 @@ const freeData = [
                                               item?.current[indexes]?.level == 1
                                                 ? 'Low'
                                                 : item?.current[indexes]
-                                                    ?.level == 2
-                                                ? 'Moderate'
-                                                : item?.current[indexes]
+                                                  ?.level == 2
+                                                  ? 'Moderate'
+                                                  : item?.current[indexes]
                                                     ?.level == 3
-                                                ? 'High'
-                                                : item?.current[indexes]
-                                                    ?.level == 4
-                                                ? 'Very High'
-                                                : 'None'
+                                                    ? 'High'
+                                                    : item?.current[indexes]
+                                                      ?.level == 4
+                                                      ? 'Very High'
+                                                      : 'None'
                                             }
                                             isPollenorSpores={
                                               item?.current[indexes]?.type
@@ -1326,20 +1386,20 @@ const freeData = [
                                   </ScrollView>
 
                                   {expandedFutureKey === item.key && (
-                                    <View style={{marginTop: 20}}>
+                                    <View style={{ marginTop: 20 }}>
                                       <FlatList
                                         data={pastPollenAndSpores}
-                                        renderItem={({item, index}) => {
+                                        renderItem={({ item, index }) => {
                                           return (
-                                            <View style={{gap: 5}}>
+                                            <View style={{ gap: 5 }}>
                                               {index ===
                                                 pastpollenHeaderIndex && (
-                                                <AppText
-                                                  title="Pollen"
-                                                  textSize={2}
-                                                  textFontWeight
-                                                />
-                                              )}
+                                                  <AppText
+                                                    title="Pollen"
+                                                    textSize={2}
+                                                    textFontWeight
+                                                  />
+                                                )}
 
                                               {index === sporesHeaderIndex && (
                                                 <AppText
@@ -1390,11 +1450,11 @@ const freeData = [
                       </>
                     ) : selected == 'Today' ? (
                       <>
-                        {expireDate ? (
+                        {isPremium ? (
                           <FlatList
                             data={sortedPollenData}
-                            contentContainerStyle={{paddingBottom: 50}}
-                            renderItem={({item, index}) => {
+                            contentContainerStyle={{ paddingBottom: 50 }}
+                            renderItem={({ item, index }) => {
                               // console.log('setting data ===>',sortedPollenData)
                               const pollenHeaderIndex = settingData.find(
                                 h => h.title === 'Pollen',
@@ -1404,7 +1464,7 @@ const freeData = [
                               )?.index;
 
                               return (
-                                <View style={{gap: 8}}>
+                                <View style={{ gap: 8 }}>
                                   {index === pollenHeaderIndex && (
                                     <AppText
                                       title="Pollen"
@@ -1456,8 +1516,8 @@ const freeData = [
                         {isfutureArray?.length > 0 && (
                           <FlatList
                             data={isfutureArray}
-                            contentContainerStyle={{paddingBottom: 50}}
-                            renderItem={({item, index}) => {
+                            contentContainerStyle={{ paddingBottom: 50 }}
+                            renderItem={({ item, index }) => {
                               const futurePollenAndSpores = item?.current?.sort(
                                 (a, b) => {
                                   if (a.type !== b.type) {
@@ -1535,7 +1595,7 @@ const freeData = [
                                   }}>
                                   <TouchableOpacity
                                     onPress={() => {
-                                      if (expireDate) {
+                                      if (isPremium) {
                                         if (expandedFutureKey === item.key) {
                                           setExpandedFutureKey(null); // Collapse if already expanded
                                         } else {
@@ -1603,14 +1663,40 @@ const freeData = [
                                       gap: 10,
                                       marginTop: 20,
                                     }}>
-                                    {expireDate ? (
+                                    {isPremium ? (
                                       <>
                                         {activePollen?.map(newItem => {
                                           const indexes =
                                             item.current.findIndex(
                                               active =>
-                                                active.name ==
-                                                newItem.common_name,
+                                                active.scientific_name?.toLowerCase() ===
+                                                newItem.name?.toLowerCase() ||
+                                                active.name?.toLowerCase() ===
+                                                newItem.common_name?.toLowerCase() ||
+                                                (newItem.common_name
+                                                  ?.toLowerCase()
+                                                  .includes('cedar') &&
+                                                  active.name
+                                                    ?.toLowerCase()
+                                                    .includes('cedar')) ||
+                                                (newItem.common_name
+                                                  ?.toLowerCase()
+                                                  .includes('alder') &&
+                                                  active.name
+                                                    ?.toLowerCase()
+                                                    .includes('alder')) ||
+                                                (newItem.common_name
+                                                  ?.toLowerCase()
+                                                  .includes('birch') &&
+                                                  active.name
+                                                    ?.toLowerCase()
+                                                    .includes('birch')) ||
+                                                (newItem.common_name
+                                                  ?.toLowerCase()
+                                                  .includes('oak') &&
+                                                  active.name
+                                                    ?.toLowerCase()
+                                                    .includes('oak')),
                                             );
 
                                           return (
@@ -1639,15 +1725,15 @@ const freeData = [
                                                     ?.level == 1
                                                     ? 'Low'
                                                     : item?.current[indexes]
-                                                        ?.level == 2
-                                                    ? 'Moderate'
-                                                    : item?.current[indexes]
+                                                      ?.level == 2
+                                                      ? 'Moderate'
+                                                      : item?.current[indexes]
                                                         ?.level == 3
-                                                    ? 'High'
-                                                    : item?.current[indexes]
-                                                        ?.level == 4
-                                                    ? 'Very High'
-                                                    : 'None'
+                                                        ? 'High'
+                                                        : item?.current[indexes]
+                                                          ?.level == 4
+                                                          ? 'Very High'
+                                                          : 'None'
                                                 }
                                                 isPollenorSpores={
                                                   item?.current[indexes]?.type
@@ -1664,7 +1750,7 @@ const freeData = [
                                       <>
                                         {FuturefreeData.map(newItem => {
                                           return (
-                                            <View style={{gap: 10}}>
+                                            <View style={{ gap: 10 }}>
                                               <AppText
                                                 title={newItem?.name}
                                                 textAlignment={'center'}
@@ -1684,12 +1770,12 @@ const freeData = [
                                                   newItem?.value == 1
                                                     ? 'Low'
                                                     : newItem?.value == 2
-                                                    ? 'Moderate'
-                                                    : newItem?.value == 3
-                                                    ? 'High'
-                                                    : newItem?.value == 4
-                                                    ? 'Very High'
-                                                    : 'None'
+                                                      ? 'Moderate'
+                                                      : newItem?.value == 3
+                                                        ? 'High'
+                                                        : newItem?.value == 4
+                                                          ? 'Very High'
+                                                          : 'None'
                                                 }
                                                 isPollenorSpores={newItem.type}
                                                 TempreaturePriorityFontSize={
@@ -1704,12 +1790,12 @@ const freeData = [
                                   </ScrollView>
 
                                   {expandedFutureKey === item.key && (
-                                    <View style={{marginTop: 20}}>
+                                    <View style={{ marginTop: 20 }}>
                                       <FlatList
                                         data={futurePollenAndSpores}
-                                        renderItem={({item, index}) => {
+                                        renderItem={({ item, index }) => {
                                           return (
-                                            <View style={{gap: 5}}>
+                                            <View style={{ gap: 5 }}>
                                               {index === pollenHeaderIndex && (
                                                 <AppText
                                                   title="Pollen"

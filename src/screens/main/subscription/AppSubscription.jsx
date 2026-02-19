@@ -222,7 +222,7 @@ const AppSubscription = ({ navigation }) => {
               transactionId: purchases[0].originalTransactionIdentifierIOS,
             }),
           );
-          navigation.navigate('Login');
+          navigation.navigate('GetStarted');
         }
       } else {
         Alert.alert(
@@ -325,7 +325,7 @@ const AppSubscription = ({ navigation }) => {
                 expireDate: moment().add(1, 'month').format('YYYY-MM-DD'),
               }),
             );
-            navigation.navigate('Login');
+            navigation.navigate('GetStarted');
           }
         }
       } else {
@@ -365,7 +365,7 @@ const AppSubscription = ({ navigation }) => {
                 transactionId: purchaseData?.originalTransactionIdentifierIOS,
               }),
             );
-            navigation.navigate('Login');
+            navigation.navigate('GetStarted');
           }
         }
       }

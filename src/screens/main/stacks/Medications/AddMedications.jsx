@@ -61,6 +61,7 @@ const AddMedications = ({ navigation }) => {
 
 
   const expireDate = useSelector(state => state.auth.expireDate);
+  const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
 
   const [medicationData, setMedicationsData] = useState([]);
   const [MedicationLoader, setMedciationLoader] = useState(false);
@@ -169,7 +170,7 @@ const AddMedications = ({ navigation }) => {
 
     // console.log("expireDate",expireDate)
 
-    if (!expireDate) {
+    if (!isPremium) {
       Alert.alert(
         'Subscribe', // Title of the alert
         'Subscribe to add the pollens', // Message
@@ -324,7 +325,7 @@ const AddMedications = ({ navigation }) => {
   // local functionality
   const AddMedicationActiveToLocal = async (medData) => {
 
-    if (!expireDate) {
+    if (!isPremium) {
       Alert.alert(
         'Subscribe', // Title of the alert
         'Subscribe to add the pollens', // Message

@@ -10,7 +10,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import React, {useEffect, useRef, useState} from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import AppHeader from '../../components/AppHeader';
 import AppImages from '../../assets/images/AppImages';
 import {
@@ -20,25 +20,26 @@ import {
 } from '../../utils/Responsive_Dimensions';
 import AppText from '../../components/AppTextComps/AppText';
 import AppColors from '../../utils/AppColors';
-import {LineChart} from 'react-native-chart-kit';
+import { LineChart } from 'react-native-chart-kit';
 import AppButton from '../../components/AppButton';
 import axios from 'axios';
 import BASE_URL from '../../utils/BASE_URL';
 import moment from 'moment';
-import {useDispatch, useSelector} from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import LoaderMode from '../../components/LoaderMode';
 import DatePicker from 'react-native-date-picker';
-import {AllergyTips} from '../../utils/AllergyTips';
+import { AllergyTips } from '../../utils/AllergyTips';
 import AppIntroSlider from 'react-native-app-intro-slider';
 import SubscribeBar from '../../components/SubscribeBar';
-import {setAllSymtomsToReduxFromApi} from '../../redux/Slices/SymtomsSlice';
+import { setAllSymtomsToReduxFromApi } from '../../redux/Slices/SymtomsSlice';
 
-const Symptom = ({navigation}) => {
+const Symptom = ({ navigation }) => {
   const screenWidth = Dimensions.get('window').width;
   const sliderRef = useRef(null);
   const dispatch = useDispatch();
 
   const expireDate = useSelector(state => state.auth.expireDate);
+  const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
   const AllSymtomsDataFromRedux = useSelector(
     state => state?.symtoms?.AllSymtoms,
   );
@@ -67,11 +68,11 @@ const Symptom = ({navigation}) => {
   const [graphSlides, setGraphSlides] = useState([]);
 
   const mojis = [
-    {id: 1, img: AppImages.Mask, title: 'Very Bad'},
-    {id: 2, img: AppImages.Pain, title: 'Bad'},
-    {id: 3, img: AppImages.Bored, title: 'Okay'},
-    {id: 4, img: AppImages.Hello, title: 'Good'},
-    {id: 5, img: AppImages.Star, title: 'Very Good'},
+    { id: 1, img: AppImages.Mask, title: 'Very Bad' },
+    { id: 2, img: AppImages.Pain, title: 'Bad' },
+    { id: 3, img: AppImages.Bored, title: 'Okay' },
+    { id: 4, img: AppImages.Hello, title: 'Good' },
+    { id: 5, img: AppImages.Star, title: 'Very Good' },
   ];
 
   const chartConfig = {
@@ -175,17 +176,17 @@ const Symptom = ({navigation}) => {
 
   // console.log("AllSymtomsDataFromRedux",AllSymtomsDataFromRedux)
   const generateGraphSlides = async selectedDate => {
-    
 
 
 
-    if(AllSymtomsDataFromRedux?.length > 0){
+
+    if (AllSymtomsDataFromRedux?.length > 0) {
 
       const lastName = AllSymtomsDataFromRedux?.at(-1)?.chartData?.labels?.at(-1);
       const currentDate = moment(new Date()).local().format('D');
-      
-      
-      
+
+
+
       if (lastName === currentDate) {
         setLoader(false);
         if (AllSymtomsDataFromRedux.length > 0) {
@@ -232,9 +233,9 @@ const Symptom = ({navigation}) => {
       const chartData = {
         labels: labels,
         datasets: [
-          {data: values},
-          {data: [1], withDots: false},
-          {data: [5], withDots: false},
+          { data: values },
+          { data: [1], withDots: false },
+          { data: [5], withDots: false },
         ],
       };
 
@@ -272,7 +273,7 @@ const Symptom = ({navigation}) => {
               if (i === 0) {
                 const newData = [...dataset.data];
                 newData[index] = newValue;
-                return {...dataset, data: newData};
+                return { ...dataset, data: newData };
               }
               return dataset;
             }),
@@ -285,25 +286,25 @@ const Symptom = ({navigation}) => {
 
   const scrollToDateSlide = (targetDay) => {
 
-  if (!AllSymtomsDataFromRedux || AllSymtomsDataFromRedux.length === 0) return;
+    if (!AllSymtomsDataFromRedux || AllSymtomsDataFromRedux.length === 0) return;
 
-  // Find which slide contains this day
-  const foundIndex = AllSymtomsDataFromRedux.findIndex(slide =>
-    slide?.chartData?.labels?.includes(String(parseInt(targetDay)))
-  );
+    // Find which slide contains this day
+    const foundIndex = AllSymtomsDataFromRedux.findIndex(slide =>
+      slide?.chartData?.labels?.includes(String(parseInt(targetDay)))
+    );
 
-  if (foundIndex !== -1 && sliderRef.current) {
-    // scroll to that week’s slide
-    sliderRef.current.goToSlide(foundIndex, true);
-  }
-};
+    if (foundIndex !== -1 && sliderRef.current) {
+      // scroll to that week’s slide
+      sliderRef.current.goToSlide(foundIndex, true);
+    }
+  };
 
 
   return (
     <SafeAreaView
-      style={{flex: 1, backgroundColor: AppColors.WHITE, paddingTop: 30}}>
-      <View style={{backgroundColor: AppColors.WHITE, flex: 1}}>
-        <View style={{paddingHorizontal: 20}}>
+      style={{ flex: 1, backgroundColor: AppColors.WHITE, paddingTop: 30 }}>
+      <View style={{ backgroundColor: AppColors.WHITE, flex: 1 }}>
+        <View style={{ paddingHorizontal: 20 }}>
           <AppHeader
             heading="Symptom"
             Rightheading="Today"
@@ -361,11 +362,11 @@ const Symptom = ({navigation}) => {
           }}
         />
         <ScrollView
-          contentContainerStyle={{flexGrow: 1, paddingBottom: 150}}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 150 }}
           showsVerticalScrollIndicator={false}>
-          {expireDate ? (
+          {isPremium ? (
             <>
-              <View style={{padding: 20}}>
+              <View style={{ padding: 20 }}>
                 {/* {loader ? (
                 <ActivityIndicator size={'large'} color={AppColors.BLACK} />
               ) : ( */}
@@ -378,12 +379,12 @@ const Symptom = ({navigation}) => {
                     marginTop: 20,
                     backgroundColor: AppColors.WHITE,
                   }}
-                  renderItem={({item}) => {
+                  renderItem={({ item }) => {
                     // console.log("emojis data", graphSlides[0])
                     return (
                       <TouchableOpacity
                         onPress={() => setApiSymtomsData(item.id)}
-                        style={{backgroundColor: AppColors.WHITE}}>
+                        style={{ backgroundColor: AppColors.WHITE }}>
                         <Image
                           source={item.img}
                           style={{
@@ -409,21 +410,21 @@ const Symptom = ({navigation}) => {
                 {/* )} */}
               </View>
 
-              <View style={{height: responsiveHeight(45)}}>
+              <View style={{ height: responsiveHeight(45) }}>
                 <AppIntroSlider
                   ref={sliderRef}
                   data={graphSlides}
                   showNextButton={false}
                   showDoneButton={false}
                   showPrevButton={false}
-                  activeDotStyle={{backgroundColor: AppColors.PRIMARY}}
-                  dotStyle={{backgroundColor: AppColors.LIGHTGRAY}}
-                  style={{width: responsiveWidth(90), alignSelf: 'center'}}
+                  activeDotStyle={{ backgroundColor: AppColors.PRIMARY }}
+                  dotStyle={{ backgroundColor: AppColors.LIGHTGRAY }}
+                  style={{ width: responsiveWidth(90), alignSelf: 'center' }}
                   // onSlideChange={index => console.log('index ii', index)}
-                  renderItem={({item, index}) => {
+                  renderItem={({ item, index }) => {
                     return (
                       <>
-                        <View style={{marginTop: 10}}>
+                        <View style={{ marginTop: 10 }}>
                           <AppText
                             title={item.title}
                             textSize={2}
@@ -446,7 +447,7 @@ const Symptom = ({navigation}) => {
                             data={
                               item?.chartData || {
                                 labels: [],
-                                datasets: [{data: []}],
+                                datasets: [{ data: [] }],
                               }
                             }
                             width={screenWidth * 0.89}
@@ -474,8 +475,8 @@ const Symptom = ({navigation}) => {
                             <FlatList
                               data={mojis}
                               inverted
-                              contentContainerStyle={{gap: 5}}
-                              renderItem={({item}) => {
+                              contentContainerStyle={{ gap: 5 }}
+                              renderItem={({ item }) => {
                                 return (
                                   <Image
                                     source={item.img}
@@ -498,7 +499,7 @@ const Symptom = ({navigation}) => {
               </View>
             </>
           ) : (
-            <View style={{justifyContent: 'center', padding: 20}}>
+            <View style={{ justifyContent: 'center', padding: 20 }}>
               <SubscribeBar
                 title="Subscribe now to log how you feel in the Symptom Tracker"
                 title2={
@@ -510,9 +511,9 @@ const Symptom = ({navigation}) => {
             </View>
           )}
 
-          <View style={{paddingHorizontal: 20}}>
-            {expireDate && (
-              <View style={{marginTop: 0}}>
+          <View style={{ paddingHorizontal: 20 }}>
+            {isPremium && (
+              <View style={{ marginTop: 0 }}>
                 <AppButton
                   title={'Go TO DATA VISUALIZER'}
                   RightColour={AppColors.rightArrowCOlor}
@@ -520,7 +521,7 @@ const Symptom = ({navigation}) => {
                 />
               </View>
             )}
-            <View style={{marginTop: 10}}>
+            <View style={{ marginTop: 10 }}>
               <AppText
                 title={'Tips & Tricks'}
                 textSize={3}
@@ -531,7 +532,7 @@ const Symptom = ({navigation}) => {
             </View>
 
             {randomTip?.id == 26 ? null : (
-              <View style={{marginTop: 10}}>
+              <View style={{ marginTop: 10 }}>
                 <Text
                   style={{
                     fontSize: responsiveFontSize(2),
@@ -541,7 +542,7 @@ const Symptom = ({navigation}) => {
                   Allergy tip
                 </Text>
                 <Text
-                  style={{fontSize: responsiveFontSize(1.8), color: '#333'}}>
+                  style={{ fontSize: responsiveFontSize(1.8), color: '#333' }}>
                   {randomTip?.tip}
                 </Text>
               </View>

@@ -9,7 +9,7 @@ import {
   Alert,
   Image,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import AppHeader from '../../../../components/AppHeader';
 import AppText from '../../../../components/AppTextComps/AppText';
 import {
@@ -25,8 +25,8 @@ import SocialAuthButton from '../../../../components/SocialAuthButton';
 import AppTextInput from '../../../../components/AppTextInput';
 import Octicons from 'react-native-vector-icons/Octicons';
 import BASE_URL from '../../../../utils/BASE_URL';
-import {useSelector} from 'react-redux';
-import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import { useSelector } from 'react-redux';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
   NestableDraggableFlatList,
   NestableScrollContainer,
@@ -34,11 +34,12 @@ import {
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import AppImages from '../../../../assets/images/AppImages';
-import {ApiCallWithUserId} from '../../../../global/ApiCall';
+import { ApiCallWithUserId } from '../../../../global/ApiCall';
 import SubscribeBar from '../../../../components/SubscribeBar';
-const ManagePollens = ({navigation}) => {
+const ManagePollens = ({ navigation }) => {
   const userData = useSelector(state => state.auth.user);
-      const expireDate = useSelector(state => state.auth.expireDate);
+  const expireDate = useSelector(state => state.auth.expireDate);
+  const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
   const [myPollens, setMyPollens] = useState([]);
 
   const [Loader, setLoader] = useState(false);
@@ -62,7 +63,7 @@ const ManagePollens = ({navigation}) => {
       'post',
       'sort_pollens',
       userData?.id,
-      {data: data},
+      { data: data },
     );
     // setLoader(false);
     console.log('sortPollens', sortPollens);
@@ -121,9 +122,9 @@ const ManagePollens = ({navigation}) => {
 
 
   return (
-    <SafeAreaView style={{flex: 1}}>
-      <GestureHandlerRootView style={{flex: 1}}>
-        <View style={{padding: 20}}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View style={{ padding: 20 }}>
           <AppHeader heading="Manage pollen and spores" goBack />
           {Loader == true ? (
             <ActivityIndicator size={'large'} color={AppColors.BLACK} />
@@ -131,106 +132,106 @@ const ManagePollens = ({navigation}) => {
 
           {
             <>
-            {
-              expireDate ? 
-              <>
-              {myPollens ? (
-                <NestableScrollContainer>
-                  <NestableDraggableFlatList
-                    data={myPollens}
-                    contentContainerStyle={{gap: 10}}
-                    renderItem={({item, drag, isActive}) => {
-                      // console.log("item", item)
-                      return (
-                        <TouchableOpacity onLongPress={drag}>
-                          <AppTextInput
-                            inputPlaceHolder={item.common_name}
-                            inputWidth={75}
-                            arrowDelete={
-                              <TouchableOpacity
-                                onPress={() =>
-                                  Alert.alert(
-                                    'Delete pollen and spores',
-                                    'Are you sure you want to delete this pollen or spores?',
-                                    [
-                                      {
-                                        text: 'Cancel',
-                                        onPress: () =>
-                                          console.log('Cancel Pressed'),
-                                        style: 'cancel',
-                                      },
-                                      {
-                                        text: 'OK',
-                                        onPress: () => deletePolles(item),
-                                      },
-                                    ],
-                                    {cancelable: false},
-                                  )
-                                }>
-                                <MaterialCommunityIcons
-                                  name={'delete'}
-                                  size={responsiveFontSize(2.5)}
-                                  color={AppColors.LIGHTGRAY}
+              {
+                isPremium ?
+                  <>
+                    {myPollens ? (
+                      <NestableScrollContainer>
+                        <NestableDraggableFlatList
+                          data={myPollens}
+                          contentContainerStyle={{ gap: 10 }}
+                          renderItem={({ item, drag, isActive }) => {
+                            // console.log("item", item)
+                            return (
+                              <TouchableOpacity onLongPress={drag}>
+                                <AppTextInput
+                                  inputPlaceHolder={item.common_name}
+                                  inputWidth={75}
+                                  arrowDelete={
+                                    <TouchableOpacity
+                                      onPress={() =>
+                                        Alert.alert(
+                                          'Delete pollen and spores',
+                                          'Are you sure you want to delete this pollen or spores?',
+                                          [
+                                            {
+                                              text: 'Cancel',
+                                              onPress: () =>
+                                                console.log('Cancel Pressed'),
+                                              style: 'cancel',
+                                            },
+                                            {
+                                              text: 'OK',
+                                              onPress: () => deletePolles(item),
+                                            },
+                                          ],
+                                          { cancelable: false },
+                                        )
+                                      }>
+                                      <MaterialCommunityIcons
+                                        name={'delete'}
+                                        size={responsiveFontSize(2.5)}
+                                        color={AppColors.LIGHTGRAY}
+                                      />
+                                    </TouchableOpacity>
+                                  }
+                                  rightLogo={
+                                    <View style={{ marginTop: 4 }}>
+                                      <Image
+                                        source={AppImages.updown}
+                                        style={{
+                                          height: 14,
+                                          width: 14,
+                                          resizeMode: 'contain',
+                                        }}
+                                      />
+                                    </View>
+                                  }
                                 />
                               </TouchableOpacity>
-                            }
-                            rightLogo={
-                              <View style={{marginTop: 4}}>
-                                <Image
-                                  source={AppImages.updown}
-                                  style={{
-                                    height: 14,
-                                    width: 14,
-                                    resizeMode: 'contain',
-                                  }}
-                                />
-                              </View>
-                            }
-                          />
-                        </TouchableOpacity>
-                      );
-                    }}
-                    keyExtractor={(item, index) => index.toString()}
-                    onDragEnd={({data}) => {sortPollens(data), setMyPollens(data)}}
-                    dragEnabled={true}
-                    activationDistance={10}
-                  />
-                </NestableScrollContainer>
-              ) : null}
-              </>
-              :
-              <>
-                  <View
-                            style={{
-                              justifyContent: 'center',
-                            }}>
-                            <SubscribeBar
-                              title="Subscribe now to see forecasts for all individual pollen and spores"
-                              title2={'With a premium subscription you can add and manage the pollen and spores you specifically want to monitor in the quick access area of the forecasts. You can choose up to 7 pollen and spores.'}
-                              handlePress={() =>
-                                navigation.navigate('Subscription')
-                              }
-                            />
-                          </View>
-              </>
+                            );
+                          }}
+                          keyExtractor={(item, index) => index.toString()}
+                          onDragEnd={({ data }) => { sortPollens(data), setMyPollens(data) }}
+                          dragEnabled={true}
+                          activationDistance={10}
+                        />
+                      </NestableScrollContainer>
+                    ) : null}
+                  </>
+                  :
+                  <>
+                    <View
+                      style={{
+                        justifyContent: 'center',
+                      }}>
+                      <SubscribeBar
+                        title="Subscribe now to see forecasts for all individual pollen and spores"
+                        title2={'With a premium subscription you can add and manage the pollen and spores you specifically want to monitor in the quick access area of the forecasts. You can choose up to 7 pollen and spores.'}
+                        handlePress={() =>
+                          navigation.navigate('Subscription')
+                        }
+                      />
+                    </View>
+                  </>
 
-            }
-            
+              }
+
             </>
           }
 
 
-          <View style={{marginTop: 20, gap: 10, }}>
-            <TouchableOpacity onPress={()=> navigation.navigate("AddPollens")} style={{backgroundColor:AppColors.BTNCOLOURS, padding:10, borderRadius:10, flexDirection:'row' ,alignItems:'center', justifyContent:'space-between'}}>
-              <AppText title={"Click here to see all pollen and spores we analyze and forecast"} textColor={AppColors.WHITE} textSize={2} textwidth={70}/>
+          <View style={{ marginTop: 20, gap: 10, }}>
+            <TouchableOpacity onPress={() => navigation.navigate("AddPollens")} style={{ backgroundColor: AppColors.BTNCOLOURS, padding: 10, borderRadius: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <AppText title={"Click here to see all pollen and spores we analyze and forecast"} textColor={AppColors.WHITE} textSize={2} textwidth={70} />
 
-                <FontAwesome6
-                          name={'circle-arrow-right'}
-                          color={AppColors.rightArrowCOlor}
-                          size={responsiveFontSize(3)}
-                        />
+              <FontAwesome6
+                name={'circle-arrow-right'}
+                color={AppColors.rightArrowCOlor}
+                size={responsiveFontSize(3)}
+              />
             </TouchableOpacity>
-           
+
           </View>
         </View>
       </GestureHandlerRootView>
