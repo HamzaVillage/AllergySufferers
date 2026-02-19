@@ -136,57 +136,62 @@ const MedicationSample = ({ navigation }) => {
     }
   };
 
+  const saveTimeoutRef = useRef(null);
+
+  const SaveMedicationDataInApi = useCallback(async allActiveMedicationRedux => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(async () => {
+      const AllActiveArray = allActiveMedicationRedux.map(res => ({
+        date: res.date,
+        units: res.units,
+        medication_id: res.id,
+      }));
+
+      if (AllActiveArray.length > 0) {
+        try {
+          await ApiCallWithUserId(
+            'post',
+            'update_medication_units',
+            userData?.id,
+            { data: AllActiveArray },
+          );
+          console.log('Medication data saved successfully');
+        } catch (error) {
+          console.log('Error saving medication data:', error);
+        }
+      }
+    }, 1000); // 1 second debounce
+  }, [userData?.id]);
+
   const getApiDataAndSaveToRedux = async () => {
     if (allActiveMedicationRedux.length === 0) {
       setSavingDataLoader(true);
-
-      // Alert.alert("This function calls getApiDataAndSaveToRedux")
       const getActiveMedicationData = await ApiCallWithUserId(
         'post',
         'get_medication_records',
         userData?.id,
       );
       setSavingDataLoader(false);
-      // const filt =getActiveMedicationData?.entries?.items.filter(med => moment(med.date).format("YYYY MM DD") === moment(new Date()).local().format("YYYY MM DD"))
-      // console.log("filt", filt)
-      // const filt = getActiveMedicationData.filter(med => med.date == moment("2025-09-29").local().format("YYYY MM DD"))
 
       if (getActiveMedicationData?.entries?.items?.length > 0) {
-        // console.log(
-        //   'getActiveMedicationData',
-        //   getActiveMedicationData?.entries?.items,
-        // );
-        dispatch(setActiveMedication(getActiveMedicationData?.entries?.items));
-        setSavingDataLoader(false);
-      } else {
-        setSavingDataLoader(false);
+        // De-duplicate items from API (key: date_id)
+        const uniqueItems = Array.from(
+          new Map(
+            getActiveMedicationData.entries.items.map(item => [
+              `${item.date}_${item.medication_id || item.id}`,
+              item,
+            ]),
+          ).values(),
+        );
+        dispatch(setActiveMedication(uniqueItems));
       }
-      return;
     }
   };
 
-  const SaveMedicationDataInApi = async allActiveMedicationRedux => {
-    // setSavingDataLoader(true);
-    const AllActiveArray = allActiveMedicationRedux.map(res => ({
-      date: res.date,
-      units: res.units,
-      medication_id: res.id,
-    }));
 
-    // console.log("AllActiveArray", AllActiveArray);
-    if (AllActiveArray) {
-      const dataSaved = await ApiCallWithUserId(
-        'post',
-        'update_medication_units',
-        userData?.id,
-        { data: AllActiveArray },
-      );
-      // setSavingDataLoader(false);
-      console.log('dataSaved');
-    } else {
-      // setSavingDataLoader(false);
-    }
-  };
 
   const setAllMedicationToRedux = async () => {
     const currentDate = moment().local().format('YYYY-MM-DD');
@@ -250,15 +255,13 @@ const MedicationSample = ({ navigation }) => {
         );
 
         const toAdd = [];
-
         dateArray.forEach(date => {
           allMyCurrentMeds.forEach(med => {
             const key = `${date}_${med.id}`;
             if (!existingMap.has(key)) {
-              // ✅ Only add if it doesn’t already exist
               toAdd.push({
                 ...med,
-                date,
+                date: date, // ✅ Used loop date correctly
                 units: 0,
               });
             }
@@ -266,136 +269,114 @@ const MedicationSample = ({ navigation }) => {
         });
 
         const mergeDates = [...allActiveMedicationRedux, ...toAdd];
-        dispatch(setActiveMedication(mergeDates));
+
+        // Final de-duplication safety check
+        const finalUniqueDates = Array.from(
+          new Map(
+            mergeDates.map(item => [`${item.date}_${item.id}`, item]),
+          ).values(),
+        );
+
+        dispatch(setActiveMedication(finalUniqueDates));
       }
     } else {
-      const activeDateStr = moment(new Date()).format('YYYY-MM-DD');
+      const currentDate = moment().local().format('YYYY-MM-DD');
+      const activeDateStr = moment().local().format('YYYY-MM-DD');
       const dateArray = generateDateRangeArray(activeDateStr, currentDate);
 
       const toAdd = [];
-
       dateArray.forEach(date => {
         allMyCurrentMeds.forEach(med => {
           toAdd.push({
             ...med,
-            date: activeDateStr,
+            date: date, // ✅ Used loop date correctly
             units: 0,
           });
         });
       });
 
-      // console.log("toAdd",toAdd,"allMyCurrentMeds..", allMyCurrentMeds)
+      // Final de-duplication safety check
+      const finalUniqueDates = Array.from(
+        new Map(
+          toAdd.map(item => [`${item.date}_${item.id}`, item]),
+        ).values(),
+      );
 
-      dispatch(setActiveMedication(toAdd));
+      dispatch(setActiveMedication(finalUniqueDates));
       setLoader(false);
     }
   };
 
-  const generateMedicationSlides = async (
+  const generateMedicationSlides = useCallback(async (
     selectedDate,
     allActiveMedicationRedux,
   ) => {
     setMedicationLoader(true);
-    if (allActiveMedicationRedux?.length == 0) {
+    if (!allActiveMedicationRedux || allActiveMedicationRedux.length === 0) {
       setMedicationLoader(false);
       return;
     }
 
     try {
       const activeDateStr =
-        allActiveMedicationRedux?.[0]?.date ||
-        moment(new Date()).format('YYYY-MM-DD');
+        allActiveMedicationRedux[0]?.date ||
+        moment().local().format('YYYY-MM-DD');
 
       setActiveDate(new Date(activeDateStr));
 
-      const activeDate = moment(activeDateStr, 'YYYY-MM-DD');
-      const baseDate = moment(
-        selectedDate ? selectedDate : new Date(),
+      const activeDateMoment = moment(activeDateStr, 'YYYY-MM-DD').startOf('day');
+      const baseDateMoment = moment(
+        selectedDate || new Date(),
         'YYYY-MM-DD',
-      );
+      ).startOf('day');
 
-      // Step 2: Calculate number of weeks
-      const diffInDays = baseDate.diff(activeDate, 'days');
+      const diffInDays = baseDateMoment.diff(activeDateMoment, 'days');
       const numberOfWeeks = Math.ceil((diffInDays + 1) / 7);
 
       const slides = [];
 
-      for (let i = 0; i < numberOfWeeks; i++) {
-        let end = moment(baseDate).subtract(i * 7, 'days');
-        let start = moment(baseDate).subtract(i * 7 + 6, 'days');
+      // Pre-group medications by date for O(N) lookup
+      const groupedByDate = new Map();
+      allActiveMedicationRedux.forEach(item => {
+        if (!groupedByDate.has(item.date)) {
+          groupedByDate.set(item.date, []);
+        }
+        groupedByDate.get(item.date).push(item);
+      });
 
-        // 🔹 Ensure start never goes before activeDate
-        if (start.isBefore(activeDate)) {
-          start = activeDate.clone();
+      for (let i = 0; i < numberOfWeeks; i++) {
+        let end = moment(baseDateMoment).subtract(i * 7, 'days');
+        let start = moment(baseDateMoment).subtract(i * 7 + 6, 'days');
+
+        if (start.isBefore(activeDateMoment)) {
+          start = activeDateMoment.clone();
         }
 
-        // Filter medications for the current week
-        const entries = allActiveMedicationRedux.filter(item => {
-          const itemDate = moment(item.date, 'YYYY-MM-DD');
-          return itemDate.isBetween(
-            start.clone().subtract(1, 'day'),
-            end.clone().add(1, 'day'),
-          );
-        });
-
-        // const seenDates = new Set();
-        // const barData = [];
-
-        // entries.forEach(entry => {
-        //   const formattedLabel = moment(entry.date, 'YYYY-MM-DD').format('D');
-        //   const value = parseInt(entry.units) || 0;
-
-        //   if (!seenDates.has(entry.date)) {
-        //     seenDates.add(entry.date);
-        //     barData.push({
-        //       value,
-        //       label: formattedLabel,
-        //       spacing: 0,
-        //       frontColor: entry.frontColor || '#E23131',
-        //       labelWidth: 0,
-        //     });
-        //   } else {
-        //     barData.push({
-        //       value,
-        //       spacing: 0,
-        //       frontColor: entry.frontColor || '#E23131',
-        //       labelWidth: 0,
-        //     });
-        //   }
-        // });
-        const seenDates = new Set();
         const barData = [];
+        let current = start.clone();
+        while (current.isSameOrBefore(end, 'day')) {
+          const dateKey = current.format('YYYY-MM-DD');
+          const dayEntries = groupedByDate.get(dateKey) || [];
+          const formattedLabel = current.format('D');
 
-        // group by date
-        const grouped = {};
-        entries.forEach(entry => {
-          if (!grouped[entry.date]) {
-            grouped[entry.date] = [];
-          }
-          grouped[entry.date].push(entry);
-        });
-
-        // now process each group
-        Object.keys(grouped).forEach(date => {
-          const group = grouped[date];
-          group.forEach((entry, idx) => {
-            const formattedLabel = moment(entry.date, 'YYYY-MM-DD').format('D');
+          dayEntries.forEach((entry, idx) => {
             const value = parseInt(entry.units) || 0;
-            const isLast = idx === group.length - 1; // ✅ last of this date
+            const isLastOfDate = idx === dayEntries.length - 1;
 
             barData.push({
               value,
-              ...(idx === 0 && { label: formattedLabel }), // 👈 sirf idx==0 pe hi label add hoga
-              spacing: isLast ? responsiveWidth(2.5) : 0, // ✅ spacing only for last of this date
+              ...(idx === 0 && { label: formattedLabel }),
+              spacing: isLastOfDate ? responsiveWidth(2.5) : 0,
               frontColor: entry.frontColor || '#E23131',
               labelWidth: 0,
             });
           });
-        });
+
+          current.add(1, 'day');
+        }
 
         slides.unshift({
           key: `${i}`,
-          // 🔹 If start and end are same → show single day
           title: start.isSame(end, 'day')
             ? start.format('DD MMM')
             : `${start.format('DD MMM')} - ${end.format('DD MMM')}`,
@@ -404,15 +385,13 @@ const MedicationSample = ({ navigation }) => {
       }
 
       setCurrentIndex(slides.length - 1);
-
       setMedicationnRecord(slides);
-
       setMedicationLoader(false);
     } catch (error) {
       setMedicationLoader(false);
       console.log('generateMedicationSlides error:', error);
     }
-  };
+  }, []);
 
   const generateDateRangeArray = (startDateStr, endDateStr) => {
     const startDate = moment(startDateStr, 'YYYY-MM-DD');
@@ -442,15 +421,15 @@ const MedicationSample = ({ navigation }) => {
     return dateArray;
   };
 
-  const addMedication = async item => {
+  const addMedication = useCallback(async item => {
     dispatch(addUnitToActiveMedicaton(item));
     SaveMedicationDataInApi(allActiveMedicationRedux);
-  };
+  }, [dispatch, allActiveMedicationRedux, SaveMedicationDataInApi]);
 
-  const removeMedication = async item => {
+  const removeMedication = useCallback(async item => {
     dispatch(removeUnitToActiveMedicaton(item));
     SaveMedicationDataInApi(allActiveMedicationRedux);
-  };
+  }, [dispatch, allActiveMedicationRedux, SaveMedicationDataInApi]);
 
   const goNext = () => {
     if (currentIndex < MedicationnRecord.length - 1) {
@@ -480,16 +459,12 @@ const MedicationSample = ({ navigation }) => {
     }
   }, [sliderScrollEnabled]);
 
-  const memoizedMedicationList = () => {
+  const memoizedMedicationList = useMemo(() => {
     if (allActiveMedicationRedux.length === 0) return null;
-
-    // console.log("allActiveMedicationRedux",allActiveMedicationRedux)
 
     const filteredMedication = allActiveMedicationRedux.filter(
       item => item.date === selecteddate,
     );
-
-    // console.log('filteredMedication', filteredMedication);
 
     return (
       <FlatList
@@ -499,7 +474,7 @@ const MedicationSample = ({ navigation }) => {
           marginTop: 20,
           marginBottom: 20,
         }}
-        keyExtractor={item => item?.id?.toString()}
+        keyExtractor={item => `${item.id}_${item.date}`}
         renderItem={({ item }) => {
           return (
             <View
@@ -555,7 +530,7 @@ const MedicationSample = ({ navigation }) => {
         }}
       />
     );
-  };
+  }, [allActiveMedicationRedux, selecteddate, medicationLoadingMap, addMedication, removeMedication]);
 
   // const memoizedSlider = () => {
   //   // useMemo(() => {
@@ -679,10 +654,9 @@ const MedicationSample = ({ navigation }) => {
   //   );
   // };
 
-  const memoizedSlider = () => {
+  const memoizedSlider = useMemo(() => {
     if (MedicationnRecord.length === 0) return null;
 
-    const screenWidth = Dimensions.get('window').width;
     const barWidth = 7;
     const spacing = 7;
 
@@ -716,8 +690,6 @@ const MedicationSample = ({ navigation }) => {
             style={{
               position: 'absolute',
               zIndex: 10,
-              // bottom: responsiveHeight(1),
-              // backgroundColor: AppColors.rightArrowCOlor,
               left: responsiveWidth(2.5),
               gap: Platform.OS == 'ios' ? 16 : 15,
               justifyContent: 'space-between',
@@ -726,8 +698,6 @@ const MedicationSample = ({ navigation }) => {
               marginBottom: 14,
               marginLeft: 12,
             }}>
-            {/* <AppText title={8} textSize={1.5} textColor={AppColors.LIGHTGRAY} />
-            <AppText title={7} textSize={1.5} textColor={AppColors.LIGHTGRAY} /> */}
             <AppText title={6} textSize={1.5} textColor={AppColors.LIGHTGRAY} />
             <AppText title={5} textSize={1.5} textColor={AppColors.LIGHTGRAY} />
             <AppText title={4} textSize={1.5} textColor={AppColors.LIGHTGRAY} />
@@ -753,14 +723,12 @@ const MedicationSample = ({ navigation }) => {
               }}
               width={chartWidth}
               barBorderRadius={2}
-              isAnimated={true}
+              isAnimated={false}
               maxValue={6}
               stepValue={1}
-
               hideDataPoints={false}
               spacing={spacing}
               formatYLabel={label => parseFloat(label).toFixed(0)}
-              //hiding verticle line
               showYAxisIndices={false}
               showVerticalLines={false}
               hideYAxisText={true}
@@ -803,7 +771,7 @@ const MedicationSample = ({ navigation }) => {
         </View>
       </View>
     );
-  };
+  }, [MedicationnRecord, currentIndex, goNext, goPrev]);
 
   // console.log("MedicationnRecord", MedicationnRecord.length)
   return (
@@ -827,10 +795,10 @@ const MedicationSample = ({ navigation }) => {
           // minimumDate={!activeDate ? new Date() : activeDate}
           minimumDate={
             allActiveMedicationRedux.length > 0
-              ? moment(allActiveMedicationRedux[0]?.date).local()
-              : moment().local()
+              ? moment(allActiveMedicationRedux[0]?.date).local().toDate()
+              : moment().local().toDate()
           }
-          maximumDate={new Date(moment().local())}
+          maximumDate={moment().local().toDate()}
           onConfirm={selectedDate => {
             setDate(selectedDate);
             setOpen(false);
@@ -858,7 +826,7 @@ const MedicationSample = ({ navigation }) => {
           )}
           {isPremium ? (
             <>
-              {memoizedMedicationList()}
+              {memoizedMedicationList}
 
               {loader && (
                 <ActivityIndicator size={'large'} color={AppColors.BLACK} />
@@ -868,7 +836,7 @@ const MedicationSample = ({ navigation }) => {
                   <ActivityIndicator size={'large'} color={AppColors.BLACK} />
                 )}
               </>
-              {MedicationnRecord.length > 0 && <>{memoizedSlider()}</>}
+              {MedicationnRecord.length > 0 && <>{memoizedSlider}</>}
             </>
           ) : (
             <View style={{ justifyContent: 'center', marginTop: 20 }}>

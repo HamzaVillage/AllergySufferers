@@ -19,7 +19,16 @@ const MedicationSlice = createSlice({
       state.AllMedication = action.payload
     },
     setActiveMedication: (state, action) => {
-      state.ActiveMedications = action.payload;
+      // Safeguard: De-duplicate records by date and medication id
+      const uniqueItems = Array.from(
+        new Map(
+          action.payload.map(item => [
+            `${item.date}_${item.medication_id || item.id}`,
+            item,
+          ]),
+        ).values(),
+      );
+      state.ActiveMedications = uniqueItems;
     },
     deleteActiveMedication: (state, action) => {
       const newMed = action.payload;
