@@ -460,7 +460,13 @@ const Home = ({ navigation }) => {
       return a.type === 'pollen' ? -1 : 1;
     }
     // Then sort by level descending (4 to 1)
-    return b.level - a.level;
+    if (b.level !== a.level) {
+      return b.level - a.level;
+    }
+    // Then sort alphabetically by common_name (fallback to name)
+    const nameA = a.common_name || a.name || '';
+    const nameB = b.common_name || b.name || '';
+    return nameA.localeCompare(nameB);
   });
 
   const SettingHeaders = () => {
@@ -577,11 +583,7 @@ const Home = ({ navigation }) => {
       <LinearGradient
         colors={[
           getThBgColour(
-            selected == 'Past'
-              ? PastPollenData?.[PastDate]?.label
-              : selected == 'Future'
-                ? FuturePollenData?.[FutureDate]?.label
-                : todayPollensData?.label,
+            todayPollensData?.label,
           ),
           AppColors.WHITE,
         ]}
@@ -756,13 +758,7 @@ const Home = ({ navigation }) => {
                               />
 
                               <SpeedoMeter
-                                TextBottom={
-                                  selected == 'Past'
-                                    ? PastPollenData?.[PastDate]?.label
-                                    : selected == 'Future'
-                                      ? FuturePollenData?.[FutureDate]?.label
-                                      : todayPollensData?.label
-                                }
+                                TextBottom={todayPollensData?.label}
                               />
                             </View>
                           </>
@@ -790,11 +786,7 @@ const Home = ({ navigation }) => {
                       <View style={{ flexDirection: 'row' }}>
                         {isPremium ? (
                           <>
-                            {(selected === 'Past'
-                              ? ispastArray?.[0]?.current?.length > 0
-                              : selected === 'Future'
-                                ? isfutureArray?.[0]?.current?.length > 0
-                                : todayPollensData?.current?.length > 0) ? (
+                            {todayPollensData?.current?.length > 0 ? (
                               <FlatList
                                 data={activePollen}
                                 horizontal={true}
@@ -809,11 +801,7 @@ const Home = ({ navigation }) => {
                                   //   todayPollensData?.current,
                                   // );
                                   const activeDataForDials =
-                                    selected === 'Past'
-                                      ? ispastArray?.[0]?.current
-                                      : selected === 'Future'
-                                        ? isfutureArray?.[0]?.current
-                                        : todayPollensData?.current;
+                                    todayPollensData?.current;
 
                                   const index = (activeDataForDials || []).findIndex(
                                     p =>
@@ -1022,145 +1010,150 @@ const Home = ({ navigation }) => {
                                     if (a.type !== b.type) {
                                       return a.type === 'pollen' ? -1 : 1;
                                     }
-                                    return b.level - a.level;
+                                    if (b.level !== a.level) {
+                                      return b.level - a.level;
+                                    }
+                                    const nameA = a.common_name || a.name || '';
+                                    const nameB = b.common_name || b.name || '';
+                                    return nameA.localeCompare(nameB);
                                   },
                                 );
 
-                                const pastpollenHeaderIndex =
-                                  pastPollenAndSpores.findIndex(
+                          const pastpollenHeaderIndex =
+                          pastPollenAndSpores.findIndex(
                                     i => i.type === 'pollen',
-                                  );
-                                const sporesHeaderIndex =
-                                  pastPollenAndSpores.findIndex(
+                          );
+                          const sporesHeaderIndex =
+                          pastPollenAndSpores.findIndex(
                                     i => i.type === 'spore',
-                                  );
+                          );
 
-                                return (
+                          return (
+                          <View
+                            style={{
+                              borderWidth: 1,
+                              borderTopRightRadius:
+                                index == ispastArray?.length - 1 ? 10 : 0,
+                              borderTopLeftRadius:
+                                index == ispastArray?.length - 1 ? 10 : 0,
+                              borderBottomRightRadius:
+                                index == 0 ? 10 : 0,
+                              borderBottomLeftRadius: index == 0 ? 10 : 0,
+                              padding: 20,
+
+                              alignItems: 'flex-start',
+                              justifyContent: 'space-between',
+                              borderBottomWidth: index == 0 ? 1 : 0,
+                            }}>
+                            {index >= ispastArray?.length - 5 ? (
+                              <TouchableOpacity
+                                onPress={() => {
+                                  if (expandedFutureKey === item.key) {
+                                    setExpandedFutureKey(null); // Collapse if already expanded
+                                  } else {
+                                    setExpandedFutureKey(item.key); // Expand only this one
+                                  }
+                                }}
+                                style={{
+                                  flexDirection: 'row',
+                                  gap: 10,
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  width: responsiveWidth(80),
+                                }}>
+                                <View
+                                  style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    gap: 5,
+                                  }}>
                                   <View
                                     style={{
+                                      height: 20,
+                                      width: 20,
+                                      borderRadius: 200,
                                       borderWidth: 1,
-                                      borderTopRightRadius:
-                                        index == ispastArray?.length - 1 ? 10 : 0,
-                                      borderTopLeftRadius:
-                                        index == ispastArray?.length - 1 ? 10 : 0,
-                                      borderBottomRightRadius:
-                                        index == 0 ? 10 : 0,
-                                      borderBottomLeftRadius: index == 0 ? 10 : 0,
-                                      padding: 20,
-
-                                      alignItems: 'flex-start',
-                                      justifyContent: 'space-between',
-                                      borderBottomWidth: index == 0 ? 1 : 0,
+                                      borderColor: getThBgColour(
+                                        item?.label,
+                                      ),
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
                                     }}>
-                                    {index >= ispastArray?.length - 5 ? (
-                                      <TouchableOpacity
-                                        onPress={() => {
-                                          if (expandedFutureKey === item.key) {
-                                            setExpandedFutureKey(null); // Collapse if already expanded
-                                          } else {
-                                            setExpandedFutureKey(item.key); // Expand only this one
-                                          }
-                                        }}
-                                        style={{
-                                          flexDirection: 'row',
-                                          gap: 10,
-                                          alignItems: 'center',
-                                          justifyContent: 'space-between',
-                                          width: responsiveWidth(80),
-                                        }}>
-                                        <View
-                                          style={{
-                                            flexDirection: 'row',
-                                            alignItems: 'center',
-                                            gap: 5,
-                                          }}>
-                                          <View
-                                            style={{
-                                              height: 20,
-                                              width: 20,
-                                              borderRadius: 200,
-                                              borderWidth: 1,
-                                              borderColor: getThBgColour(
-                                                item?.label,
-                                              ),
-                                              alignItems: 'center',
-                                              justifyContent: 'center',
-                                            }}>
-                                            <View
-                                              style={{
-                                                height: 15,
-                                                width: 15,
-                                                borderRadius: 200,
-                                                backgroundColor: getThBgColour(
-                                                  item?.label,
-                                                ),
-                                              }}
-                                            />
-                                          </View>
+                                    <View
+                                      style={{
+                                        height: 15,
+                                        width: 15,
+                                        borderRadius: 200,
+                                        backgroundColor: getThBgColour(
+                                          item?.label,
+                                        ),
+                                      }}
+                                    />
+                                  </View>
 
-                                          <AppText
-                                            title={item.key}
-                                            textSize={2}
-                                            textColor={AppColors.BLACK}
-                                            textFontWeight
-                                          />
-                                        </View>
-                                        <AntDesign
-                                          name={'plus'}
-                                          size={responsiveFontSize(3)}
-                                          color={AppColors.BLACK}
-                                        />
-                                      </TouchableOpacity>
-                                    ) : (
-                                      <View
-                                        style={{
-                                          flexDirection: 'row',
-                                          gap: 10,
-                                          alignItems: 'center',
-                                          justifyContent: 'space-between',
-                                          width: responsiveWidth(80),
-                                        }}>
-                                        <View
-                                          style={{
-                                            flexDirection: 'row',
-                                            alignItems: 'center',
-                                            gap: 5,
-                                          }}>
-                                          <View
-                                            style={{
-                                              height: 20,
-                                              width: 20,
-                                              borderRadius: 200,
-                                              borderWidth: 1,
-                                              borderColor: getThBgColour(
-                                                item?.label,
-                                              ),
-                                              alignItems: 'center',
-                                              justifyContent: 'center',
-                                            }}>
-                                            <View
-                                              style={{
-                                                height: 15,
-                                                width: 15,
-                                                borderRadius: 200,
-                                                backgroundColor: getThBgColour(
-                                                  item?.label,
-                                                ),
-                                              }}
-                                            />
-                                          </View>
+                                  <AppText
+                                    title={item.key}
+                                    textSize={2}
+                                    textColor={AppColors.BLACK}
+                                    textFontWeight
+                                  />
+                                </View>
+                                <AntDesign
+                                  name={'plus'}
+                                  size={responsiveFontSize(3)}
+                                  color={AppColors.BLACK}
+                                />
+                              </TouchableOpacity>
+                            ) : (
+                              <View
+                                style={{
+                                  flexDirection: 'row',
+                                  gap: 10,
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  width: responsiveWidth(80),
+                                }}>
+                                <View
+                                  style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    gap: 5,
+                                  }}>
+                                  <View
+                                    style={{
+                                      height: 20,
+                                      width: 20,
+                                      borderRadius: 200,
+                                      borderWidth: 1,
+                                      borderColor: getThBgColour(
+                                        item?.label,
+                                      ),
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                    }}>
+                                    <View
+                                      style={{
+                                        height: 15,
+                                        width: 15,
+                                        borderRadius: 200,
+                                        backgroundColor: getThBgColour(
+                                          item?.label,
+                                        ),
+                                      }}
+                                    />
+                                  </View>
 
-                                          <AppText
-                                            title={item.key}
-                                            textSize={2}
-                                            textColor={AppColors.BLACK}
-                                            textFontWeight
-                                          />
-                                        </View>
-                                      </View>
-                                    )}
+                                  <AppText
+                                    title={item.key}
+                                    textSize={2}
+                                    textColor={AppColors.BLACK}
+                                    textFontWeight
+                                  />
+                                </View>
+                              </View>
+                            )}
 
-                                    {/* <ScrollView
+                            {/* <ScrollView
                                     horizontal
                                     style={{
                                       flexDirection: 'row',
@@ -1284,151 +1277,151 @@ const Home = ({ navigation }) => {
                                     </View>
                                   </ScrollView> */}
 
-                                    <ScrollView
-                                      horizontal
-                                      contentContainerStyle={{
-                                        gap: 10,
-                                        marginTop: 20,
-                                      }}>
-                                      {activePollen?.map(newItem => {
-                                        const indexes = item.current.findIndex(
-                                          active =>
-                                            active.scientific_name?.toLowerCase() ===
-                                            newItem.name?.toLowerCase() ||
-                                            active.name?.toLowerCase() ===
-                                            newItem.common_name?.toLowerCase() ||
-                                            (newItem.common_name
-                                              ?.toLowerCase()
-                                              .includes('cedar') &&
-                                              active.name
-                                                ?.toLowerCase()
-                                                .includes('cedar')) ||
-                                            (newItem.common_name
-                                              ?.toLowerCase()
-                                              .includes('alder') &&
-                                              active.name
-                                                ?.toLowerCase()
-                                                .includes('alder')) ||
-                                            (newItem.common_name
-                                              ?.toLowerCase()
-                                              .includes('birch') &&
-                                              active.name
-                                                ?.toLowerCase()
-                                                .includes('birch')) ||
-                                            (newItem.common_name
-                                              ?.toLowerCase()
-                                              .includes('oak') &&
-                                              active.name
-                                                ?.toLowerCase()
-                                                .includes('oak')),
-                                        );
+                            <ScrollView
+                              horizontal
+                              contentContainerStyle={{
+                                gap: 10,
+                                marginTop: 20,
+                              }}>
+                              {activePollen?.map(newItem => {
+                                const indexes = item.current.findIndex(
+                                  active =>
+                                    active.scientific_name?.toLowerCase() ===
+                                    newItem.name?.toLowerCase() ||
+                                    active.name?.toLowerCase() ===
+                                    newItem.common_name?.toLowerCase() ||
+                                    (newItem.common_name
+                                      ?.toLowerCase()
+                                      .includes('cedar') &&
+                                      active.name
+                                        ?.toLowerCase()
+                                        .includes('cedar')) ||
+                                    (newItem.common_name
+                                      ?.toLowerCase()
+                                      .includes('alder') &&
+                                      active.name
+                                        ?.toLowerCase()
+                                        .includes('alder')) ||
+                                    (newItem.common_name
+                                      ?.toLowerCase()
+                                      .includes('birch') &&
+                                      active.name
+                                        ?.toLowerCase()
+                                        .includes('birch')) ||
+                                    (newItem.common_name
+                                      ?.toLowerCase()
+                                      .includes('oak') &&
+                                      active.name
+                                        ?.toLowerCase()
+                                        .includes('oak')),
+                                );
 
-                                        return (
-                                          <View
-                                            style={{
-                                              gap: 10,
-                                              alignItems: 'center',
-                                            }}>
-                                            <AppText
-                                              title={newItem.common_name}
-                                              textAlignment={'center'}
-                                              textSize={1.5}
-                                              textColor={AppColors.BLACK}
-                                              textFontWeight
-                                              textwidth={40}
-                                              textHeight={5}
-                                            />
+                                return (
+                                  <View
+                                    style={{
+                                      gap: 10,
+                                      alignItems: 'center',
+                                    }}>
+                                    <AppText
+                                      title={newItem.common_name}
+                                      textAlignment={'center'}
+                                      textSize={1.5}
+                                      textColor={AppColors.BLACK}
+                                      textFontWeight
+                                      textwidth={40}
+                                      textHeight={5}
+                                    />
 
-                                            <SpeedoMeter
-                                              imgWeight={30}
-                                              imgHeight={10}
-                                              speedometerWidth={30}
-                                              imageTop={-10}
-                                              TextBottom={
-                                                item?.current[indexes]?.level == 1
-                                                  ? 'Low'
-                                                  : item?.current[indexes]
-                                                    ?.level == 2
-                                                    ? 'Moderate'
-                                                    : item?.current[indexes]
-                                                      ?.level == 3
-                                                      ? 'High'
-                                                      : item?.current[indexes]
-                                                        ?.level == 4
-                                                        ? 'Very High'
-                                                        : 'None'
-                                              }
-                                              isPollenorSpores={
-                                                item?.current[indexes]?.type
-                                              }
-                                              TempreaturePriorityFontSize={1.6}
-                                            />
-                                          </View>
-                                        );
-                                      })}
-                                    </ScrollView>
-
-                                    {expandedFutureKey === item.key && (
-                                      <View style={{ marginTop: 20 }}>
-                                        <FlatList
-                                          data={pastPollenAndSpores}
-                                          renderItem={({ item, index }) => {
-                                            return (
-                                              <View style={{ gap: 5 }}>
-                                                {index ===
-                                                  pastpollenHeaderIndex && (
-                                                    <AppText
-                                                      title="Pollen"
-                                                      textSize={2}
-                                                      textFontWeight
-                                                    />
-                                                  )}
-
-                                                {index === sporesHeaderIndex && (
-                                                  <AppText
-                                                    title="Spores"
-                                                    textSize={2}
-                                                    marginTop={2}
-                                                    textFontWeight
-                                                  />
-                                                )}
-
-                                                <PointPollenSpores
-                                                  PollenSporesArr={
-                                                    pastPollenAndSpores
-                                                  }
-                                                  index={index}
-                                                  item={item}
-                                                  selected={selected}
-                                                  containerwidth={responsiveWidth(
-                                                    80,
-                                                  )}
-                                                />
-                                              </View>
-                                            );
-                                          }}
-                                        />
-                                      </View>
-                                    )}
+                                    <SpeedoMeter
+                                      imgWeight={30}
+                                      imgHeight={10}
+                                      speedometerWidth={30}
+                                      imageTop={-10}
+                                      TextBottom={
+                                        item?.current[indexes]?.level == 1
+                                          ? 'Low'
+                                          : item?.current[indexes]
+                                            ?.level == 2
+                                            ? 'Moderate'
+                                            : item?.current[indexes]
+                                              ?.level == 3
+                                              ? 'High'
+                                              : item?.current[indexes]
+                                                ?.level == 4
+                                                ? 'Very High'
+                                                : 'None'
+                                      }
+                                      isPollenorSpores={
+                                        item?.current[indexes]?.type
+                                      }
+                                      TempreaturePriorityFontSize={1.6}
+                                    />
                                   </View>
                                 );
+                              })}
+                            </ScrollView>
+
+                            {expandedFutureKey === item.key && (
+                              <View style={{ marginTop: 20 }}>
+                                <FlatList
+                                  data={pastPollenAndSpores}
+                                  renderItem={({ item, index }) => {
+                                    return (
+                                      <View style={{ gap: 5 }}>
+                                        {index ===
+                                          pastpollenHeaderIndex && (
+                                            <AppText
+                                              title="Pollen"
+                                              textSize={2}
+                                              textFontWeight
+                                            />
+                                          )}
+
+                                        {index === sporesHeaderIndex && (
+                                          <AppText
+                                            title="Spores"
+                                            textSize={2}
+                                            marginTop={2}
+                                            textFontWeight
+                                          />
+                                        )}
+
+                                        <PointPollenSpores
+                                          PollenSporesArr={
+                                            pastPollenAndSpores
+                                          }
+                                          index={index}
+                                          item={item}
+                                          selected={selected}
+                                          containerwidth={responsiveWidth(
+                                            80,
+                                          )}
+                                        />
+                                      </View>
+                                    );
+                                  }}
+                                />
+                              </View>
+                            )}
+                          </View>
+                          );
                               }}
                             />
                           ) : (
-                            <View
-                              style={{
-                                justifyContent: 'center',
-                              }}>
-                              <SubscribeBar
-                                title="Subscribe now to see past forecasts"
-                                title2={
-                                  'Upgrade to a premium subscription today to unlock past forecasts for all pollen and spores in the air for the past 14 days (First 5 days include all pollen and spores in the air. The next 9 days will show past forecasts for pollen and spores in the quick access dials).'
-                                }
-                                handlePress={() =>
-                                  navigation.navigate('Subscription')
-                                }
-                              />
-                            </View>
+                          <View
+                            style={{
+                              justifyContent: 'center',
+                            }}>
+                            <SubscribeBar
+                              title="Subscribe now to see past forecasts"
+                              title2={
+                                'Upgrade to a premium subscription today to unlock past forecasts for all pollen and spores in the air for the past 14 days (First 5 days include all pollen and spores in the air. The next 9 days will show past forecasts for pollen and spores in the quick access dials).'
+                              }
+                              handlePress={() =>
+                                navigation.navigate('Subscription')
+                              }
+                            />
+                          </View>
                           )}
                         </>
                       ) : selected == 'Today' ? (
@@ -1506,7 +1499,12 @@ const Home = ({ navigation }) => {
                                     if (a.type !== b.type) {
                                       return a.type === 'pollen' ? -1 : 1;
                                     }
-                                    return b.level - a.level;
+                                    if (b.level !== a.level) {
+                                      return b.level - a.level;
+                                    }
+                                    const nameA = a.common_name || a.name || '';
+                                    const nameB = b.common_name || b.name || '';
+                                    return nameA.localeCompare(nameB);
                                   },
                                 );
 

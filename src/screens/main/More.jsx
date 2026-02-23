@@ -20,9 +20,10 @@ const More = ({ navigation }) => {
   const pollens = [
     { id: 1, name: 'App Settings', top: true, onPress: () => navigation.navigate("AppSetting") },
     { id: 2, name: 'Data Visualizer', onPress: () => navigation.navigate("Data Visualizer") },
-    { id: 3, name: 'Help', onPress: () => navigation.navigate("HelpScreen") },
-    { id: 4, name: 'Account', bottom: true, onPress: () => navigation.navigate("Account") },
-
+    { id: 3, name: 'Tips & Tricks', onPress: () => navigation.navigate("TipsTrick") },
+    { id: 4, name: 'Pollen Information', onPress: () => navigation.navigate("PollenInfoForCad") },
+    { id: 5, name: 'Help', onPress: () => navigation.navigate("HelpScreen") },
+    { id: 6, name: 'Account', bottom: true, onPress: () => navigation.navigate("Account") },
   ];
 
   return (

@@ -11,9 +11,7 @@ const HelpScreen = ({ navigation }) => {
   const pollens = [
     { id: 1, name: 'View Free App Guide Instructions', onPress: () => navigation.navigate("GuideInstructionSubCatogory", { type: "free" }), top: true, },
     { id: 2, name: 'View Premium App Guide Instructions', onPress: () => navigation.navigate("GuideInstructionSubCatogory", { type: "paid" }), },
-    { id: 2, name: 'Tips & Tricks', onPress: () => navigation.navigate("TipsTrick") },
-    { id: 4, name: 'Send Feedback', onPress: () => navigation.navigate("FeedBack") },
-    { id: 5, name: 'Pollen Information for Canada', bottom: true, onPress: () => navigation.navigate("PollenInfoForCad") },
+    { id: 3, name: 'Send Feedback', bottom: true, onPress: () => navigation.navigate("FeedBack") },
   ];
 
 

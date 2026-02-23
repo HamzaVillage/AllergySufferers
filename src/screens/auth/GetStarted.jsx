@@ -186,7 +186,7 @@ const GetStarted = ({ navigation }) => {
 
         <AppButton
           bgColor={AppColors.WHITE}
-          title={'Login'}
+          title={"Proceed with today's forecast"}
           textColor={AppColors.BTNCOLOURS}
           textSize={2}
           handlePress={() => checkLoginandPremium()}

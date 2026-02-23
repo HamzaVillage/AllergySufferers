@@ -81,6 +81,8 @@ const DatavisualizerSample = ({ navigation }) => {
   const [todayPollensData, setTodayPollensData] = useState([]);
   const [MedicationnRecord, setMedicationnRecord] = useState([]);
 
+  console.log('todayPollensData', todayPollensData);
+
   const [pollenLoader, setPollenLoader] = useState(false);
 
   const [date, setDate] = useState(new Date());
@@ -119,7 +121,7 @@ const DatavisualizerSample = ({ navigation }) => {
 
   useEffect(() => {
     const nav = navigation.addListener('focus', () => {
-      // getAllAllergens();
+      getAllAllergens();
 
       // getSelectedAllergens(activeCity);
 
@@ -211,6 +213,7 @@ const DatavisualizerSample = ({ navigation }) => {
     setActiveDate(null);
     setPollenLoader(true);
 
+    console.log("userData", userData)
     let config = {
       method: 'get',
       maxBodyLength: Infinity,
@@ -223,7 +226,10 @@ const DatavisualizerSample = ({ navigation }) => {
       .then(response => {
         // console.log(JSON.stringify(response.data));
         setPollenLoader(false);
-        setTodayPollensData(response.data);
+        console.log('response.data', response.data);
+        // Extract the allergens array from the response object
+        const allergens = response.data?.allergens || response.data || [];
+        setTodayPollensData(Array.isArray(allergens) ? allergens : []);
       })
       .catch(error => {
         console.log(error);
