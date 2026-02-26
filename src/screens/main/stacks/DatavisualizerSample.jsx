@@ -1258,6 +1258,15 @@ const DatavisualizerSample = ({ navigation }) => {
                         title={'Low'}
                         textSize={1.5}
                       />
+
+                      <AppText
+                        // style={{
+                        //   position: 'absolute',
+                        //   top: '62%'
+                        // }}
+                        title={'None'}
+                        textSize={1.5}
+                      />
                     </View>
                   </View>
                 ) : (
