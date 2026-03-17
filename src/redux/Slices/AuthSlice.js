@@ -93,7 +93,7 @@
 //     setActiveMedication: (state, action) => {
 
 //       state.ActiveMedications = action.payload
-    
+
 //     },
 //     deleteActiveMedication: (state, action) => {
 //       const newMed = action.payload;
@@ -110,7 +110,7 @@
 //       const newMed = action.payload;
 
 
-      
+
 //       const indexof = state.ActiveMedications.findIndex(
 //         med => med.id === newMed.id && med.date === newMed.date
 //       );
@@ -206,17 +206,17 @@ export const CurrentLogin = createAsyncThunk(
   async (config, { rejectWithValue }) => {
     try {
       const { data } = await axios.request(config);
-      
+
       // console.log("data", data.message)
-      if(data?.message){
+      if (data?.message) {
         ShowError(data.message, 1000)
-      }else{
+      } else {
         ShowError("Succesfully logged In", 1000)
       }
 
       return data;
     } catch (error) {
-      console.log('Error during login:', error);
+      console.log('Error during login:', error.response);
       ShowError(error?.response?.data?.message, 1000)
       // ShowError("Your password is incorrect, or this account does not exist.", 2000)
       return rejectWithValue(error.response?.data || 'Login failed');
@@ -236,7 +236,7 @@ const AuthSlice = createSlice({
       state.currentLocation.Lat = null;
       state.currentLocation.Lng = null;
       state.SubscriptionType = null,
-      state.transactionId = null
+        state.transactionId = null
     },
     setCurrentUserData: (state, action) => {
       state.user = action.payload;
@@ -260,7 +260,7 @@ const AuthSlice = createSlice({
     setWatchPaidTut: (state, action) => {
       state.WatchPaidTut = action.payload
     },
-     
+
   },
   extraReducers: builder => {
     builder
@@ -271,14 +271,14 @@ const AuthSlice = createSlice({
         state.loader = false;
         state.LoggedIn = true
 
-        if(action.payload.expiry){
+        if (action.payload.expiry) {
           state.expireDate = action.payload.expiry;
           state.isExpired = false;
         }
 
       })
       .addCase(CurrentLogin.pending, state => {
-        
+
         state.loader = true;
       })
       .addCase(CurrentLogin.rejected, state => {

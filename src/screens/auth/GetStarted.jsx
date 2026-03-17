@@ -143,7 +143,7 @@ const GetStarted = ({ navigation }) => {
 
           <View style={{ height: 20 }} />
 
-          <AppText
+          {/* <AppText
             title={"The Pollen and Spore Season has ended in Canada for 2025."}
             textColor={AppColors.WHITE}
             textSize={1.7}
@@ -169,7 +169,7 @@ const GetStarted = ({ navigation }) => {
             textColor={AppColors.WHITE}
             textSize={1.7}
             textAlignment={'center'}
-          />
+          /> */}
 
 
 

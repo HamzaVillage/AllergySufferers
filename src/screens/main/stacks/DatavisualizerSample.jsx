@@ -1222,8 +1222,8 @@ const DatavisualizerSample = ({ navigation }) => {
                         // paddingVertical: responsiveHeight(1),
                         // justifyContent: 'flex-start',,
                         height: responsiveHeight(30),
-                        top: '30%',
-                        gap: 10,
+                        top: '21%',
+                        gap: 15,
                       }}>
                       <AppText
                         // style={{
