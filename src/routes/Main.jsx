@@ -1,7 +1,7 @@
-import {View, Text, Image, StyleSheet, Platform, StatusBar, SafeAreaView } from 'react-native';
+import { View, Text, Image, StyleSheet, Platform, StatusBar, SafeAreaView } from 'react-native';
 import React, { useEffect } from 'react';
-import {createStackNavigator} from '@react-navigation/stack';
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import Home from '../screens/main/Home';
 import AppColors from '../utils/AppColors';
@@ -50,7 +50,7 @@ const Main = () => {
   return (
     <Stack.Navigator
       initialRouteName="Home"
-      screenOptions={{headerShown: false}}>
+      screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Home" component={MyTabs} />
 
       <Stack.Screen name="FeedBack" component={HomeWithSafeArea(FeedBack)} />
@@ -88,8 +88,8 @@ const Main = () => {
       <Stack.Screen name="Account" component={HomeWithSafeArea(Account)} />
       <Stack.Screen name="ViewAppGuide" component={HomeWithSafeArea(ViewAppGuide)} />
       <Stack.Screen name="ViewFreeAppGuide" component={HomeWithSafeArea(ViewFreeAppGuide)} />
-      
-      
+
+
       <Stack.Screen
         name="HelpScreen"
         component={HomeWithSafeArea(HelpScreen)}
@@ -128,8 +128,8 @@ const Main = () => {
       <Stack.Screen name="TipsTrick" component={HomeWithSafeArea(TipsTrick)} />
       <Stack.Screen name="GuideInstructionSubCatogory" component={HomeWithSafeArea(GuideInstructionSubCatogory)} />
       <Stack.Screen name="ViewSubGuideInstruction" component={HomeWithSafeArea(ViewSubGuideInstruction)} />
-  
-      
+
+
     </Stack.Navigator>
   );
 };
@@ -138,7 +138,7 @@ function MyTabs() {
   const navigationRef = useNavigation()
   useEffect(() => {
     // When app is in background
-    
+
     const unsubscribe = getMessaging().onNotificationOpenedApp(remoteMessage => {
       // console.log("remoteMessage",remoteMessage)
       navigationRef.reset({
@@ -163,36 +163,36 @@ function MyTabs() {
     return unsubscribe;
   }, []);
 
-  // const insets = useSafeAreaInsets();
+  // const   = useSafeAreaInsets();
   return (
     // <SafeAreaView style={{flex:1}}>
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-      
+
         tabBarStyle: {
           backgroundColor: AppColors.BTNCOLOURS,
           height: 90,
           paddingTop: 10,
-          position:'absolute',
+          position: 'absolute',
           // paddingBottom: insets.bottom + 80 ,
-          
+
           bottom: 0,
-          zIndex:100
+          zIndex: 100
         },
 
-       
+
       }}>
       <Tab.Screen
         name="Forecast"
         component={Home}
         options={{
-          tabBarIcon: ({focused}) => {
+          tabBarIcon: ({ focused }) => {
             return (
               <View>
                 <Image
                   source={AppImages.Forcast}
-                  style={{height: 30, width: 30}}
+                  style={{ height: 30, width: 30 }}
                 />
               </View>
             );
@@ -207,7 +207,7 @@ function MyTabs() {
             return (
               <Image
                 source={AppImages.SYMPTOMS}
-                style={{height: 30, width: 30}}
+                style={{ height: 30, width: 30 }}
               />
             );
           },
@@ -228,7 +228,7 @@ function MyTabs() {
         }}
       /> */}
 
-       <Tab.Screen
+      <Tab.Screen
         name="Medication"
         component={MedicationSample}
         options={{
@@ -236,14 +236,14 @@ function MyTabs() {
             return (
               <Image
                 source={AppImages.Medication}
-                style={{height: 30, width: 30}}
+                style={{ height: 30, width: 30 }}
               />
             );
           },
         }}
       />
 
-       <Tab.Screen
+      <Tab.Screen
         name="Data Visualizer"
         component={DatavisualizerSample}
         options={{
@@ -251,7 +251,7 @@ function MyTabs() {
             return (
               <Image
                 source={AppImages.visualizer}
-                style={{height: 30, width: 30}}
+                style={{ height: 30, width: 30 }}
               />
             );
           },
@@ -264,7 +264,7 @@ function MyTabs() {
         options={{
           tabBarIcon: () => {
             return (
-              <Image source={AppImages.More} style={{height: 30, width: 30}} />
+              <Image source={AppImages.More} style={{ height: 30, width: 30 }} />
             );
           },
         }}
@@ -279,8 +279,8 @@ const HomeWithSafeArea = Component => props => {
 
 
   return (
-    <SafeAreaView style={{ flex: 1 }} >  
-      <StatusBar barStyle={"light-content"}/>
+    <SafeAreaView style={{ flex: 1 }} >
+      <StatusBar barStyle={"light-content"} />
       <Component {...props} />
     </SafeAreaView>
   );
@@ -290,7 +290,7 @@ const SettingTabScreen = () => {
   return (
     <Stack.Navigator
       initialRouteName="More"
-      screenOptions={{headerShown: false}}>
+      screenOptions={{ headerShown: false }}>
       <Stack.Screen name="More" component={HomeWithSafeArea(More)} />
       <Stack.Screen name="Account" component={HomeWithSafeArea(Account)} />
       <Stack.Screen
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#fff', // or AppColors.BACKGROUND
-    color:AppColors.BLACK
+    color: AppColors.BLACK
   },
 });
 
