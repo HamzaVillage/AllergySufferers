@@ -38,13 +38,7 @@ import AppImages from '../../../../assets/images/AppImages';
 import moment from 'moment';
 import DatePicker from 'react-native-date-picker';
 import { ApiCallWithUserId } from '../../../../global/ApiCall';
-import {
-  deleteActiveMedication,
-  removeCurrentActiveMedication,
-  RemoveUpdateMedicationListOnEveryDate,
-  setActiveMedication,
-  setAllMedicationFromApi,
-} from '../../../../redux/Slices/MedicationSlice';
+import { saveCurrentMeds, loadCurrentMeds, saveActiveMedications, loadActiveMedications } from '../../../../global/MedicationFileCache';
 import Toast from 'react-native-toast-message';
 import SubscribeBar from '../../../../components/SubscribeBar';
 // import { NestableScrollContainer, NestableDraggableFlatList } from "react-native-draggable-flatlist"
@@ -52,15 +46,11 @@ import SubscribeBar from '../../../../components/SubscribeBar';
 const ManageMedications = ({ navigation }) => {
   const userData = useSelector(state => state.auth.user);
   const dispatch = useDispatch();
-  const allActiveMedicationRedux = useSelector(
-    state => state.medications.MyCurrentMeds,
-  );
-  const ActiveMedications = useSelector(
-    state => state.medications.ActiveMedications,
-  );
+  const [allActiveMedicationRedux, setAllActiveMedicationRedux] = useState([]); // Maps to MyCurrentMeds
+  const [ActiveMedications, setActiveMedications] = useState([]); // Maps to Records
 
-  const expireDate = useSelector(state => state.auth.expireDate);
-  const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
+  const isExpired = useSelector(state => state.auth.isExpired);
+  const isPremium = !isExpired;
   const [savingDataLoader, setSavingDataLoader] = useState(false);
 
   // console.log('ActiveMedications', ActiveMedications); 
@@ -82,28 +72,39 @@ const ManageMedications = ({ navigation }) => {
   const [OtherLoader, setOtherLoader] = useState(false)
 
   useEffect(() => {
-    setLoader(false)
-
-  }, [ActiveMedications]);
+    const nav = navigation.addListener('focus', async () => {
+      setLoader(true);
+      const cachedCurrent = await loadCurrentMeds();
+      const cachedActive = await loadActiveMedications();
+      if (cachedCurrent) setAllActiveMedicationRedux(cachedCurrent);
+      if (cachedActive) setActiveMedications(cachedActive);
+      setLoader(false);
+    });
+    return nav;
+  }, [navigation]);
 
   useEffect(() => {
     if (isPremium) {
+      if (allActiveMedicationRedux?.length === 0) {
+        getActiveMedicationsApi();
+      }
       if (ActiveMedications?.length === 0) {
-        getApiDataAndSaveToRedux()
+        getMedicationRecordsApi();
       }
     }
-  }, [ActiveMedications])
+  }, [allActiveMedicationRedux, ActiveMedications, isPremium]);
 
-  const deleteActiveMedicationRedux = async medData => {
-    // dispatch( deleteActiveMedication(medData))
+  const deleteActiveMedicationLocal = async medData => {
+    const updatedCurrent = allActiveMedicationRedux.filter(med => med.id !== medData.id);
+    const updatedActive = ActiveMedications.filter(med => (med.medication_id || med.id) !== medData.id);
+    
+    setAllActiveMedicationRedux(updatedCurrent);
+    setActiveMedications(updatedActive);
+    
+    await saveCurrentMeds(updatedCurrent);
+    await saveActiveMedications(updatedActive);
 
-    // return
-    dispatch(RemoveUpdateMedicationListOnEveryDate(medData));
-    dispatch(removeCurrentActiveMedication(medData));
-
-    // return
-
-    const deleteMed = await ApiCallWithUserId(
+    await ApiCallWithUserId(
       'post',
       'delete_medication',
       userData?.id,
@@ -120,14 +121,12 @@ const ManageMedications = ({ navigation }) => {
 
 
   const sortMedication = async data => {
-    // Alert.alert("draged?")
-    setOtherLoader(true)
-
-
-    const sortnow = await updateSortedCurrentDateMedsInList(ActiveMedications, data)
-    dispatch(setActiveMedication(sortnow))
-    setOtherLoader(false)
-  }
+    setOtherLoader(true);
+    const sortnow = await updateSortedCurrentDateMedsInList(ActiveMedications, data);
+    setActiveMedications(sortnow);
+    await saveActiveMedications(sortnow);
+    setOtherLoader(false);
+  };
 
 
 
@@ -144,12 +143,12 @@ const ManageMedications = ({ navigation }) => {
   };
 
 
-  const getCurrentDateIndexes = array => {
-    const currentDate = moment(new Date()).format('YYYY-MM-DD');
+  const getCurrentDateIndexes = (array, dateToMatch) => {
+    const targetDate = dateToMatch || moment(new Date()).format('YYYY-MM-DD');
 
     return array
       .map((item, index) => ({ item, index })) // attach index to each item
-      .filter(({ item }) => item.date == currentDate); // keep only current date items
+      .filter(({ item }) => item.date == targetDate); // keep only target date items
   };
 
   const currentDateMeds = ActiveMedications?.filter(
@@ -159,31 +158,42 @@ const ManageMedications = ({ navigation }) => {
 
 
 
-  const getApiDataAndSaveToRedux = async () => {
-    if (allActiveMedicationRedux.length === 0) {
-      setSavingDataLoader(true);
-
-      // Alert.alert("This function calls getApiDataAndSaveToRedux")
+  const getMedicationRecordsApi = async () => {
+    setSavingDataLoader(true);
+    try {
       const getActiveMedicationData = await ApiCallWithUserId(
         'post',
         'get_medication_records',
         userData?.id,
       );
 
-
-
       if (getActiveMedicationData?.entries?.items?.length > 0) {
-        console.log(
-          'getActiveMedicationData',
-          getActiveMedicationData?.entries?.items,
-        );
-        dispatch(setActiveMedication(getActiveMedicationData?.entries?.items));
-        setSavingDataLoader(false);
-      } else {
-        setSavingDataLoader(false);
+        setActiveMedications(getActiveMedicationData?.entries?.items);
+        await saveActiveMedications(getActiveMedicationData?.entries?.items);
       }
-      return;
-    } else {
+    } catch (error) {
+      console.log('Error fetching medication records:', error);
+    } finally {
+      setSavingDataLoader(false);
+    }
+  };
+
+  const getActiveMedicationsApi = async () => {
+    setSavingDataLoader(true);
+    try {
+      const response = await ApiCallWithUserId(
+        'post',
+        'get_medications_active',
+        userData?.id,
+      );
+
+      if (response?.data?.length > 0) {
+        setAllActiveMedicationRedux(response?.data);
+        await saveCurrentMeds(response?.data);
+      }
+    } catch (error) {
+      console.log('Error fetching active medications:', error);
+    } finally {
       setSavingDataLoader(false);
     }
   };
@@ -211,7 +221,7 @@ const ManageMedications = ({ navigation }) => {
 
               <View style={{ gap: 10 }}>
                 <AppText
-                  textSize={'Active Medication'}
+                  title={'Active Medication'}
                   textColor={AppColors.BLACK}
                   textFontWeight
                 />
@@ -222,10 +232,10 @@ const ManageMedications = ({ navigation }) => {
 
                 {isPremium ? (
                   <>
-                    {currentDateMeds ? (
+                    {allActiveMedicationRedux?.length > 0 ? (
                       <NestableScrollContainer>
                         <NestableDraggableFlatList
-                          data={currentDateMeds}
+                          data={allActiveMedicationRedux}
                           contentContainerStyle={{ gap: 10 }}
                           renderItem={({ item, drag, isActive }) => {
                             return (
@@ -249,7 +259,7 @@ const ManageMedications = ({ navigation }) => {
                                             {
                                               text: 'OK',
                                               onPress: () =>
-                                                deleteActiveMedicationRedux(
+                                                deleteActiveMedicationLocal(
                                                   item,
                                                 ),
                                             },
@@ -280,8 +290,11 @@ const ManageMedications = ({ navigation }) => {
                               </TouchableOpacity>
                             );
                           }}
-                          keyExtractor={(item, index) => index.toString()}
-                          onDragEnd={({ data }) => sortMedication(data)}
+                          keyExtractor={(item, index) => (item.id || index).toString()}
+                          onDragEnd={({ data }) => {
+                            setAllActiveMedicationRedux(data);
+                            saveCurrentMeds(data);
+                          }}
                           dragEnabled={true}
                           activationDistance={10}
                         />

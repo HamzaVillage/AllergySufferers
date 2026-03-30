@@ -35,41 +35,40 @@ import {
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AppImages from '../../../../assets/images/AppImages';
 import Toast from 'react-native-toast-message';
-import {
-  setRemoveCity,
-  setSortCity,
-} from '../../../../redux/Slices/MedicationSlice';
+import { saveCities, loadCities } from '../../../../global/CityFileCache';
 import {ApiCallWithUserId} from '../../../../global/ApiCall';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import { clearForaCastSlive, removeForeCastSlice } from '../../../../redux/Slices/ForecastSlice';
+import { deleteForecast } from '../../../../global/ForecastFileCache';
 const ManageCities = ({navigation}) => {
   const dispatch = useDispatch();
   const userdata = useSelector(state => state.auth.user);
-  const allMyCity = useSelector(state => state?.medications?.allMyCity);
+  const [allMyCity, setAllMyCity] = useState([]);
   const [loader, setLoader] = useState(false);
   const [cities, setCities] = useState([]);
   const [activeMedication, setActiveMedication] = useState();
   const [NotifiedCity, setNotifiedCity] = useState()
   const [NotifyLoader, setNotifyLoader] = useState(false)
 
-  const AllForcast = useSelector(state => state?.forecast?.AllForcast);
+
 
 
 
 
   useEffect(() => {
-    const nav = navigation.addListener('focus',async () => {
+    const nav = navigation.addListener('focus', async () => {
+      const cached = await loadCities();
+      if (cached) setAllMyCity(cached);
       getAllCities();
-      const getNotiRes =  await ApiCallWithUserId("post", "get_notification_city", userdata?.id  )
-      setNotifiedCity(getNotiRes.data)
+      const getNotiRes = await ApiCallWithUserId("post", "get_notification_city", userdata?.id);
+      setNotifiedCity(getNotiRes.data);
     });
 
     return nav;
   }, [navigation]);
 
-  useEffect(()=>{
-    setActiveMedication(allMyCity)
-  },[allMyCity])
+  useEffect(() => {
+    setActiveMedication(allMyCity);
+  }, [allMyCity]);
 
   const getAllCities = () => {
     setLoader(true);
@@ -115,13 +114,13 @@ const ManageCities = ({navigation}) => {
   };
 
   // setLoader(false);
-  const deleteActiveMedication = item => {
-
-
-    dispatch(removeForeCastSlice(item.city_name))
-
+  const deleteActiveMedication = async (item) => {
+    deleteForecast(item.city_name);
     setLoader(true);
-    dispatch(setRemoveCity(item));
+
+    const updated = allMyCity.filter(city => city.city_name !== item.city_name);
+    setAllMyCity(updated);
+    await saveCities(updated);
 
     let data = JSON.stringify({
       city_id: item.id,
@@ -140,10 +139,8 @@ const ManageCities = ({navigation}) => {
     axios
       .request(config)
       .then(response => {
-        // console.log('delete response', JSON.stringify(response.data));
-        setActiveMedication(response?.data?.cities);
+        // We trust the local update, but could refresh from response if API returns full list
         setLoader(false);
-        // getAllCities();
         Alert.alert('Success', 'City deleted successfully');
       })
       .catch(error => {
@@ -153,13 +150,14 @@ const ManageCities = ({navigation}) => {
   };
 
   const sortingCities = async data => {
-    const sortCitiesApi = await ApiCallWithUserId(
+    setAllMyCity(data);
+    await saveCities(data);
+    await ApiCallWithUserId(
       'post',
       'sort_cities',
       userdata?.id,
-      {data: data},
+      { data: data },
     );
-    dispatch(setSortCity(data));
   };
 
   const NoifyCity = async (cityProps) => {

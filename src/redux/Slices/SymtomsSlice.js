@@ -23,7 +23,7 @@ const SymtomsSlice = createSlice({
   },
 });
 
-export const {setAllSymtomsToReduxFromApi, removeForeCastSlice, clearForaCastSlive} =
+export const {setAllSymtomsToReduxFromApi} =
   SymtomsSlice.actions;
 
 export default SymtomsSlice.reducer;

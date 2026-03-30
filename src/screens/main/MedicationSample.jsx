@@ -32,12 +32,7 @@ import DatePicker from 'react-native-date-picker';
 import AppIntroSlider from 'react-native-app-intro-slider';
 import SubscribeBar from '../../components/SubscribeBar';
 import { ApiCallWithUserId } from '../../global/ApiCall';
-import {
-  addUnitToActiveMedicaton,
-  removeUnitToActiveMedicaton,
-  setActiveMedication,
-  setAllMedicationFromApi,
-} from '../../redux/Slices/MedicationSlice';
+import { saveCurrentMeds, loadCurrentMeds, saveActiveMedications, loadActiveMedications } from '../../global/MedicationFileCache';
 import { useFocusEffect } from '@react-navigation/native';
 import AppImages from '../../assets/images/AppImages';
 
@@ -49,13 +44,8 @@ const MedicationSample = ({ navigation }) => {
   const expireDate = useSelector(state => state.auth.expireDate);
   const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
 
-  const allActiveMedicationRedux = useSelector(
-    state => state.medications.ActiveMedications,
-  );
-
-  const allMyCurrentMeds = useSelector(
-    state => state.medications.MyCurrentMeds,
-  );
+  const [allActiveMedicationRedux, setAllActiveMedicationRedux] = useState([]);
+  const [allMyCurrentMeds, setAllMyCurrentMeds] = useState([]);
 
   // console.log("allActiveMedicationRedux",allActiveMedicationRedux)
 
@@ -98,29 +88,39 @@ const MedicationSample = ({ navigation }) => {
 
   useFocusEffect(
     useCallback(() => {
-      if (allMyCurrentMeds && allMyCurrentMeds.length > 0) {
-        setAllMedicationToRedux();
-      } else {
-        getMedApiDataAndSaveToRedux(allMyCurrentMeds, allActiveMedicationRedux);
-        if (allActiveMedicationRedux.length === 0) {
-          getApiDataAndSaveToRedux(allActiveMedicationRedux);
-        }
-      }
+      const loadData = async () => {
+        setLoader(true);
+        const cachedCurrentMeds = await loadCurrentMeds();
+        const cachedActiveMeds = await loadActiveMedications();
 
-      // Alert.alert("runninnng use focus")
-    }, [allMyCurrentMeds, allActiveMedicationRedux]),
+        if (cachedCurrentMeds) setAllMyCurrentMeds(cachedCurrentMeds);
+        if (cachedActiveMeds) setAllActiveMedicationRedux(cachedActiveMeds);
+
+        const currentMeds = cachedCurrentMeds || [];
+        const activeMeds = cachedActiveMeds || [];
+
+        if (currentMeds.length > 0) {
+          await setAllMedicationToRedux(currentMeds, activeMeds);
+        } else {
+          await getMedApiDataAndSaveToRedux(currentMeds, activeMeds);
+          if (activeMeds.length === 0) {
+            await getApiDataAndSaveToRedux(activeMeds);
+          }
+        }
+        setLoader(false);
+      };
+      loadData();
+    }, []),
   );
 
-  const getMedApiDataAndSaveToRedux = async () => {
+  const getMedApiDataAndSaveToRedux = async (currentMeds, activeMeds) => {
     const currentDate = moment().local().format('YYYY-MM-DD');
 
     if (
-      allMyCurrentMeds.length > 0 ||
-      moment(
-        allActiveMedicationRedux[allActiveMedicationRedux.length - 1].date,
-      ).format('YYYY-MM-DD') === currentDate
+      currentMeds.length > 0 ||
+      (activeMeds.length > 0 &&
+        moment(activeMeds[activeMeds.length - 1].date).format('YYYY-MM-DD') === currentDate)
     ) {
-      // Alert.alert("Called in return")
       return;
     }
 
@@ -131,8 +131,8 @@ const MedicationSample = ({ navigation }) => {
     );
 
     if (response?.data?.length > 0) {
-      // console.log('get_medications_active....');
-      dispatch(setAllMedicationFromApi(response?.data));
+      setAllMyCurrentMeds(response?.data);
+      saveCurrentMeds(response?.data);
     }
   };
 
@@ -158,7 +158,8 @@ const MedicationSample = ({ navigation }) => {
             userData?.id,
             { data: AllActiveArray },
           );
-          console.log('Medication data saved successfully');
+          console.log('Medication data saved successfully to API');
+          saveActiveMedications(allActiveMedicationRedux);
         } catch (error) {
           console.log('Error saving medication data:', error);
         }
@@ -166,8 +167,8 @@ const MedicationSample = ({ navigation }) => {
     }, 1000); // 1 second debounce
   }, [userData?.id]);
 
-  const getApiDataAndSaveToRedux = async () => {
-    if (allActiveMedicationRedux.length === 0) {
+  const getApiDataAndSaveToRedux = async (activeMeds) => {
+    if (activeMeds.length === 0) {
       setSavingDataLoader(true);
       const getActiveMedicationData = await ApiCallWithUserId(
         'post',
@@ -182,128 +183,100 @@ const MedicationSample = ({ navigation }) => {
           new Map(
             getActiveMedicationData.entries.items.map(item => [
               `${item.date}_${item.medication_id || item.id}`,
-              item,
+              { ...item, id: item.medication_id || item.id }
             ]),
           ).values(),
         );
-        dispatch(setActiveMedication(uniqueItems));
+        setAllActiveMedicationRedux(uniqueItems);
+        saveActiveMedications(uniqueItems);
       }
     }
   };
 
 
 
-  const setAllMedicationToRedux = async () => {
+  const setAllMedicationToRedux = async (currentMeds, activeMeds) => {
     const currentDate = moment().local().format('YYYY-MM-DD');
 
-    setLoader(true);
+    if (activeMeds.length > 0) {
+      // Build a set of all existing records for quick lookup
+      const existingMap = new Set(
+        activeMeds.map(med => `${med.date}_${med.medication_id || med.id}`),
+      );
 
-    // Alert.alert('currentDate', currentDate,       allActiveMedicationRedux[allActiveMedicationRedux?.length - 1]?.date );
-    // return
+      // Find the earliest date in records
+      const firstDate = activeMeds[0]?.date || currentDate;
 
-    // Alert.alert("currentDate", currentDate, allActiveMedicationRedux.length  )
-
-    if (allActiveMedicationRedux.length > 0) {
-      const allergenLastDate =
-        allActiveMedicationRedux[allActiveMedicationRedux?.length - 1]?.date;
-
-      // Alert.alert("Calling...",allergenLastDate,currentDate )
-      // if (moment(allergenLastDate).isAfter(moment(currentDate))) {
-      //   // allergenLastDate is greater than currentDate
-      //   console.log('Allergen last date is in the future');
-      //   setLoader(false);
-      //   return;
-      // }
-
-      if (allergenLastDate == currentDate) {
-        setLoader(false);
-      } else {
-        // Alert.alert("runnig the medication alert")
-        // const dateArray = skipLastDateAndReturnDateRangeArray(
-        //   allergenLastDate,
-        //   currentDate,
-        // )
-        // // console.log("currentDate",currentDate, allActiveMedicationRedux.length, allActiveMedicationRedux[allActiveMedicationRedux?.length - 1]?.date, dateArray, allMyCurrentMeds)
-
-        // const toAdd = [];
-
-        // dateArray.forEach(date => {
-        //   allMyCurrentMeds.forEach(med => {
-        //     toAdd.push({
-        //       ...med,
-        //       date: date,
-        //       units: 0,
-        //     });
-        //   });
-        // });
-
-        // const mergeDates = [...allActiveMedicationRedux, ...toAdd];
-
-        // console.log('mergeDates', toAdd);
-
-        // dispatch(setActiveMedication(mergeDates));
-        // setLoader(false);
-
-        const dateArray = skipLastDateAndReturnDateRangeArray(
-          allergenLastDate,
-          currentDate,
-        );
-
-        // Create a set of existing date+id combos
-        const existingMap = new Set(
-          allActiveMedicationRedux.map(med => `${med.date}_${med.id}`),
-        );
-
-        const toAdd = [];
-        dateArray.forEach(date => {
-          allMyCurrentMeds.forEach(med => {
-            const key = `${date}_${med.id}`;
-            if (!existingMap.has(key)) {
-              toAdd.push({
-                ...med,
-                date: date, // ✅ Used loop date correctly
-                units: 0,
-              });
-            }
-          });
-        });
-
-        const mergeDates = [...allActiveMedicationRedux, ...toAdd];
-
-        // Final de-duplication safety check
-        const finalUniqueDates = Array.from(
-          new Map(
-            mergeDates.map(item => [`${item.date}_${item.id}`, item]),
-          ).values(),
-        );
-
-        dispatch(setActiveMedication(finalUniqueDates));
+      // Generate date range from the day after the earliest to today
+      const allergenLastDate = activeMeds[activeMeds.length - 1]?.date;
+      const endDate = allergenLastDate && allergenLastDate < currentDate ? currentDate : allergenLastDate;
+      const dateArray = skipLastDateAndReturnDateRangeArray(
+        firstDate,
+        endDate || currentDate,
+      );
+      // Always include today
+      if (!dateArray.includes(currentDate)) {
+        dateArray.push(currentDate);
       }
-    } else {
-      const currentDate = moment().local().format('YYYY-MM-DD');
-      const activeDateStr = moment().local().format('YYYY-MM-DD');
-      const dateArray = generateDateRangeArray(activeDateStr, currentDate);
 
       const toAdd = [];
       dateArray.forEach(date => {
-        allMyCurrentMeds.forEach(med => {
-          toAdd.push({
-            ...med,
-            date: date, // ✅ Used loop date correctly
-            units: 0,
-          });
+        currentMeds.forEach(med => {
+          const medID = med.medication_id || med.id;
+          const key = `${date}_${medID}`;
+          if (!existingMap.has(key)) {
+            toAdd.push({
+              ...med,
+              id: medID,
+              date: date,
+              units: 0,
+            });
+          }
         });
       });
 
-      // Final de-duplication safety check
-      const finalUniqueDates = Array.from(
-        new Map(
-          toAdd.map(item => [`${item.date}_${item.id}`, item]),
-        ).values(),
-      );
+      // Also ensure today has records for all current meds
+      currentMeds.forEach(med => {
+        const medID = med.medication_id || med.id;
+        const todayKey = `${currentDate}_${medID}`;
+        if (!existingMap.has(todayKey) && !toAdd.some(t => t.date === currentDate && (t.medication_id || t.id) === medID)) {
+          toAdd.push({
+            ...med,
+            id: medID,
+            date: currentDate,
+            units: 0,
+          });
+        }
+      });
 
-      dispatch(setActiveMedication(finalUniqueDates));
-      setLoader(false);
+      if (toAdd.length > 0) {
+        const merged = [...activeMeds, ...toAdd];
+        // De-duplicate by date + medication ID, keeping the one with higher units
+        const deduped = Array.from(
+          new Map(
+            merged.map(med => [
+              `${med.date}_${med.medication_id || med.id}`,
+              med,
+            ]),
+          ).values(),
+        );
+        setAllActiveMedicationRedux(deduped);
+        await saveActiveMedications(deduped);
+      }
+    } else {
+      const activeDateStr = moment().local().format('YYYY-MM-DD');
+      const toAdd = [];
+      currentMeds.forEach(med => {
+        toAdd.push({
+          ...med,
+          id: med.medication_id || med.id,
+          date: activeDateStr,
+          units: 0,
+        });
+      });
+
+      setAllActiveMedicationRedux(toAdd);
+      await saveActiveMedications(toAdd);
     }
   };
 
@@ -422,14 +395,28 @@ const MedicationSample = ({ navigation }) => {
   };
 
   const addMedication = useCallback(async item => {
-    dispatch(addUnitToActiveMedicaton(item));
-    SaveMedicationDataInApi(allActiveMedicationRedux);
-  }, [dispatch, allActiveMedicationRedux, SaveMedicationDataInApi]);
+    const medID = item.medication_id || item.id;
+    const updated = allActiveMedicationRedux.map(med =>
+      (med.medication_id || med.id) === medID && med.date === item.date
+        ? { ...med, units: (parseInt(med.units) || 0) + 1 }
+        : med
+    );
+    setAllActiveMedicationRedux(updated);
+    saveActiveMedications(updated);
+    SaveMedicationDataInApi(updated);
+  }, [allActiveMedicationRedux, SaveMedicationDataInApi]);
 
   const removeMedication = useCallback(async item => {
-    dispatch(removeUnitToActiveMedicaton(item));
-    SaveMedicationDataInApi(allActiveMedicationRedux);
-  }, [dispatch, allActiveMedicationRedux, SaveMedicationDataInApi]);
+    const medID = item.medication_id || item.id;
+    const updated = allActiveMedicationRedux.map(med =>
+      (med.medication_id || med.id) === medID && med.date === item.date && (parseInt(med.units) || 0) > 0
+        ? { ...med, units: (parseInt(med.units) || 0) - 1 }
+        : med
+    );
+    setAllActiveMedicationRedux(updated);
+    saveActiveMedications(updated);
+    SaveMedicationDataInApi(updated);
+  }, [allActiveMedicationRedux, SaveMedicationDataInApi]);
 
   const goNext = () => {
     if (currentIndex < MedicationnRecord.length - 1) {
@@ -466,9 +453,19 @@ const MedicationSample = ({ navigation }) => {
       item => item.date === selecteddate,
     );
 
+    // De-duplicate by medication ID for the displayed list
+    const uniqueMedication = Array.from(
+      new Map(
+        filteredMedication.map(med => [
+          med.medication_id || med.id,
+          med,
+        ]),
+      ).values(),
+    );
+
     return (
       <FlatList
-        data={filteredMedication}
+        data={uniqueMedication}
         contentContainerStyle={{
           gap: 10,
           marginTop: 20,

@@ -41,16 +41,12 @@ import {
 import AppImages from '../../../assets/images/AppImages';
 import SubscribeBar from '../../../components/SubscribeBar';
 import GetAllLocation from '../../../global/GetAllLocation';
+import { saveAllergens, loadAllergens } from '../../../global/AllergenFileCache';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ApiCallWithUserId } from '../../../global/ApiCall';
-import {
-  addUnitToActiveMedicaton,
-  removeUnitToActiveMedicaton,
-  setActiveCity,
-  setActiveMedication,
-  setAllMedicationFromApi,
-} from '../../../redux/Slices/MedicationSlice';
+import { saveCurrentMeds, loadCurrentMeds, saveActiveMedications, loadActiveMedications } from '../../../global/MedicationFileCache';
+import { saveCities, loadCities, saveActiveCity, loadActiveCity } from '../../../global/CityFileCache';
 import { useFocusEffect } from '@react-navigation/native';
 import Svg, { Circle, G, Line, Polyline, Rect } from 'react-native-svg';
 import SvgDashLine from '../../../components/SvgDashLine';
@@ -61,14 +57,10 @@ const DatavisualizerSample = ({ navigation }) => {
   const userData = useSelector(state => state?.auth?.user);
   const expireDate = useSelector(state => state?.auth?.expireDate);
   const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
-  const allActiveMedicationRedux = useSelector(
-    state => state?.medications?.ActiveMedications,
-  );
-  const allMyCurrentMeds = useSelector(
-    state => state?.medications?.MyCurrentMeds,
-  );
-  const AllCities = useSelector(state => state?.medications?.allMyCity);
-  const activeCity = useSelector(state => state?.medications?.ActiveCity);
+  const [allActiveMedicationRedux, setAllActiveMedicationRedux] = useState([]);
+  const [allMyCurrentMeds, setAllMyCurrentMeds] = useState([]);
+  const [AllCities, setAllCities] = useState([]);
+  const [activeCity, setActiveCityLocal] = useState(null);
 
   // console.log("userData", userData)
   // console.log("expireDate", expireDate)
@@ -145,22 +137,62 @@ const DatavisualizerSample = ({ navigation }) => {
 
   useFocusEffect(
     useCallback(() => {
-      if (allMyCurrentMeds && allMyCurrentMeds.length > 0) {
-        setAllMedicationToRedux();
-      } else {
-        getMedApiDataAndSaveToRedux();
-        if (allActiveMedicationRedux.length === 0) {
-          getApiDataAndSaveToRedux();
+      const loadData = async () => {
+        const cachedActiveMeds = await loadActiveMedications();
+        const cachedCurrentMeds = await loadCurrentMeds();
+        const cachedCities = await loadCities();
+        const cachedActiveCity = await loadActiveCity();
+        const cachedAllergens = await loadAllergens();
+
+        if (cachedActiveMeds) setAllActiveMedicationRedux(cachedActiveMeds);
+        if (cachedCurrentMeds) setAllMyCurrentMeds(cachedCurrentMeds);
+        
+        let finalCities = cachedCities;
+        if (!cachedCities || cachedCities.length === 0) {
+          const apiCities = await GetAllLocation(userData?.id);
+          if (apiCities?.cities) {
+            finalCities = apiCities.cities;
+            setAllCities(apiCities.cities);
+            saveCities(apiCities.cities);
+          }
+        } else {
+          setAllCities(cachedCities);
         }
-      }
-    }, [allMyCurrentMeds, allActiveMedicationRedux]),
+
+        const finalActiveCity = cachedActiveCity || (finalCities ? finalCities[0] : null);
+        if (finalActiveCity) {
+          setActiveCityLocal(finalActiveCity);
+          saveActiveCity(finalActiveCity);
+        }
+
+        if (cachedAllergens) {
+          setTodayPollensData(cachedAllergens);
+        } else {
+          getAllAllergens();
+        }
+
+        // Initial fetch if needed
+        const currentMeds = cachedCurrentMeds || [];
+        const activeMeds = cachedActiveMeds || [];
+        
+        if (currentMeds.length > 0) {
+          setAllMedicationToFile(currentMeds, activeMeds);
+        } else {
+          getMedApiDataAndSaveToFile(currentMeds, activeMeds);
+          if (activeMeds.length === 0) {
+            getApiDataAndSaveToFile(activeMeds);
+          }
+        }
+        
+        getDataVisualizer(finalActiveCity);
+      };
+      loadData();
+    }, []),
   );
 
   useFocusEffect(
     useCallback(() => {
       getSelectedAllergens(activeCity);
-
-      // Alert.alert("runninnng use focus")
     }, [activeCity, allActiveMedicationRedux, MedicationnRecord]),
   );
 
@@ -182,28 +214,23 @@ const DatavisualizerSample = ({ navigation }) => {
     }
   }, [selecteddate, activeCity]);
 
-  const NewActiveCity = () => {
-    // console.log("activeCity",AllCities)
-    // Alert.alert("ative med new")
-    // return
-
-    if (!activeCity) {
-      dispatch(setActiveCity(AllCities[0]));
-      return;
+  const NewActiveCity = (cities) => {
+    const list = cities || AllCities;
+    if (!activeCity && list.length > 0) {
+      setActiveCityLocal(list[0]);
+      saveActiveCity(list[0]);
     } else {
-      console.log('active city is exist');
+      console.log('active city exists or no cities');
     }
   };
 
-  const getMedApiDataAndSaveToRedux = async () => {
+  const getMedApiDataAndSaveToFile = async (currentMeds, activeMeds) => {
     const currentDate = moment().local().format('YYYY-MM-DD');
 
     if (
-      allMyCurrentMeds.length > 0 ||
-      (allActiveMedicationRedux.length > 0 &&
-        moment(
-          allActiveMedicationRedux[allActiveMedicationRedux.length - 1].date,
-        ).format('YYYY-MM-DD') === currentDate)
+      currentMeds.length > 0 ||
+      (activeMeds.length > 0 &&
+        moment(activeMeds[activeMeds.length - 1].date).format('YYYY-MM-DD') === currentDate)
     ) {
       return;
     }
@@ -215,12 +242,13 @@ const DatavisualizerSample = ({ navigation }) => {
     );
 
     if (response?.data?.length > 0) {
-      dispatch(setAllMedicationFromApi(response?.data));
+      setAllMyCurrentMeds(response?.data);
+      saveCurrentMeds(response?.data);
     }
   };
 
-  const getApiDataAndSaveToRedux = async () => {
-    if (allActiveMedicationRedux.length === 0) {
+  const getApiDataAndSaveToFile = async (activeMeds) => {
+    if (activeMeds.length === 0) {
       setSavingDataLoader(true);
 
       const getActiveMedicationData = await ApiCallWithUserId(
@@ -234,11 +262,12 @@ const DatavisualizerSample = ({ navigation }) => {
           new Map(
             getActiveMedicationData.entries.items.map(item => [
               `${item.date}_${item.medication_id || item.id}`,
-              item,
+              { ...item, id: item.medication_id || item.id }
             ]),
           ).values(),
         );
-        dispatch(setActiveMedication(uniqueItems));
+        setAllActiveMedicationRedux(uniqueItems);
+        saveActiveMedications(uniqueItems);
         setSavingDataLoader(false);
       } else {
         setSavingDataLoader(false);
@@ -247,12 +276,11 @@ const DatavisualizerSample = ({ navigation }) => {
     }
   };
 
-  const setAllMedicationToRedux = async () => {
+  const setAllMedicationToFile = async (currentMeds, activeMeds) => {
     const currentDate = moment().local().format('YYYY-MM-DD');
 
-    if (allActiveMedicationRedux.length > 0) {
-      const allergenLastDate =
-        allActiveMedicationRedux[allActiveMedicationRedux?.length - 1]?.date;
+    if (activeMeds.length > 0) {
+      const allergenLastDate = activeMeds[activeMeds?.length - 1]?.date;
 
       if (allergenLastDate !== currentDate) {
         const startDate = moment(allergenLastDate, 'YYYY-MM-DD').add(1, 'day');
@@ -264,16 +292,18 @@ const DatavisualizerSample = ({ navigation }) => {
         }
 
         const existingMap = new Set(
-          allActiveMedicationRedux.map(med => `${med.date}_${med.id}`),
+          activeMeds.map(med => `${med.date}_${med.medication_id || med.id}`),
         );
 
         const toAdd = [];
         dateArray.forEach(date => {
-          allMyCurrentMeds.forEach(med => {
-            const key = `${date}_${med.id}`;
+          currentMeds.forEach(med => {
+            const medID = med.medication_id || med.id;
+            const key = `${date}_${medID}`;
             if (!existingMap.has(key)) {
               toAdd.push({
                 ...med,
+                id: medID,
                 date: date,
                 units: 0,
               });
@@ -281,33 +311,26 @@ const DatavisualizerSample = ({ navigation }) => {
           });
         });
 
-        const mergeDates = [...allActiveMedicationRedux, ...toAdd];
-        const finalUniqueDates = Array.from(
-          new Map(
-            mergeDates.map(item => [`${item.date}_${item.id}`, item]),
-          ).values(),
-        );
-
-        dispatch(setActiveMedication(finalUniqueDates));
+        if (toAdd.length > 0) {
+          const updated = [...activeMeds, ...toAdd];
+          setAllActiveMedicationRedux(updated);
+          await saveActiveMedications(updated);
+        }
       }
     } else {
-      const currentDate = moment().local().format('YYYY-MM-DD');
+      const activeDateStr = moment().local().format('YYYY-MM-DD');
       const toAdd = [];
-      allMyCurrentMeds.forEach(med => {
+      currentMeds.forEach(med => {
         toAdd.push({
           ...med,
-          date: currentDate,
+          id: med.medication_id || med.id,
+          date: activeDateStr,
           units: 0,
         });
       });
 
-      const finalUniqueDates = Array.from(
-        new Map(
-          toAdd.map(item => [`${item.date}_${item.id}`, item]),
-        ).values(),
-      );
-
-      dispatch(setActiveMedication(finalUniqueDates));
+      setAllActiveMedicationRedux(toAdd);
+      await saveActiveMedications(toAdd);
     }
   };
 
@@ -332,7 +355,9 @@ const DatavisualizerSample = ({ navigation }) => {
         console.log('response.data', response.data);
         // Extract the allergens array from the response object
         const allergens = response.data?.allergens || response.data || [];
-        setTodayPollensData(Array.isArray(allergens) ? allergens : []);
+        const finalAllergens = Array.isArray(allergens) ? allergens : [];
+        setTodayPollensData(finalAllergens);
+        saveAllergens(finalAllergens);
       })
       .catch(error => {
         console.log(error);
@@ -830,11 +855,27 @@ const DatavisualizerSample = ({ navigation }) => {
   };
 
   const addMedication = async item => {
-    dispatch(addUnitToActiveMedicaton(item));
+    const medID = item.medication_id || item.id;
+    const updated = allActiveMedicationRedux.map(med =>
+      (med.medication_id || med.id) === medID && med.date === item.date
+        ? { ...med, units: (parseInt(med.units) || 0) + 1 }
+        : med
+    );
+    setAllActiveMedicationRedux(updated);
+    saveActiveMedications(updated);
+    SaveMedicationDataInApi(updated);
   };
 
   const removeMedication = async item => {
-    dispatch(removeUnitToActiveMedicaton(item));
+    const medID = item.medication_id || item.id;
+    const updated = allActiveMedicationRedux.map(med =>
+      (med.medication_id || med.id) === medID && med.date === item.date && (parseInt(med.units) || 0) > 0
+        ? { ...med, units: (parseInt(med.units) || 0) - 1 }
+        : med
+    );
+    setAllActiveMedicationRedux(updated);
+    saveActiveMedications(updated);
+    SaveMedicationDataInApi(updated);
   };
 
   const assignColorsToAllergens = (allergens, colors) => {
@@ -860,10 +901,9 @@ const DatavisualizerSample = ({ navigation }) => {
   // console.log("loadingItemId",loadingItemId)
 
   const SelectLocation = async city => {
-    // await AsyncStorage.setItem('isCity', JSON.stringify(city));
     setactiveCityLocalState(city);
-    dispatch(setActiveCity(city));
-    // getSelectedAllergens(city);
+    setActiveCityLocal(city);
+    saveActiveCity(city);
   };
 
   const chartSpacing = responsiveWidth(20); // You can tweak this value as needed

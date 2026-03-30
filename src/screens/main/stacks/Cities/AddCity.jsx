@@ -7,7 +7,7 @@ import {
   SafeAreaView,
   Alert,
 } from 'react-native';
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import AppHeader from '../../../../components/AppHeader';
 import AppText from '../../../../components/AppTextComps/AppText';
 import {
@@ -22,33 +22,40 @@ import AppButton from '../../../../components/AppButton';
 import SocialAuthButton from '../../../../components/SocialAuthButton';
 import GooglePlacesTextInput from 'react-native-google-places-textinput';
 import BASE_URL from '../../../../utils/BASE_URL';
-import { useDispatch, useSelector } from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import axios from 'axios';
-import { setAddCity } from '../../../../redux/Slices/MedicationSlice';
+import {saveCities, loadCities} from '../../../../global/CityFileCache';
 import Toast from 'react-native-toast-message';
 import moment from 'moment';
 
-const AddCity = ({ navigation }) => {
+const AddCity = ({navigation}) => {
   const dispatch = useDispatch();
   const userdata = useSelector(state => state.auth.user);
-  const allMyCity = useSelector(state => state?.medications?.allMyCity);
+  const [allMyCity, setAllMyCity] = useState([]);
   const expireDate = useSelector(state => state.auth.expireDate);
   const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
   const [detail, setDetil] = useState();
   const [cityLoader, setCityLoader] = useState(false);
 
+  useEffect(() => {
+    const nav = navigation.addListener('focus', async () => {
+      const cached = await loadCities();
+      if (cached) setAllMyCity(cached);
+    });
+    return nav;
+  }, [navigation]);
 
-
-
-  const addNewCity = () => {
+  const addNewCity = async () => {
     if (!isPremium) {
-
       const isManualAddedCount = allMyCity.filter(
         state => state?.currentLocation == false,
       );
 
       if (isManualAddedCount?.length >= 2) {
-        Alert.alert('You can only add 2 cities with the free version', 'To add up to 5 cities please subscribe to Premium.');
+        Alert.alert(
+          'You can only add 2 cities with the free version',
+          'To add up to 5 cities please subscribe to Premium.',
+        );
         return;
       }
     }
@@ -64,14 +71,16 @@ const AddCity = ({ navigation }) => {
 
     setCityLoader(true);
     if (detail) {
-      dispatch(
-        setAddCity({
-          lat: JSON.stringify(detail?.location?.latitude),
-          lng: JSON.stringify(detail?.location?.longitude),
-          city_name: detail?.displayName?.text,
-          currentLocation: false,
-        }),
-      );
+      const newCity = {
+        lat: JSON.stringify(detail?.location?.latitude),
+        lng: JSON.stringify(detail?.location?.longitude),
+        city_name: detail?.displayName?.text,
+        currentLocation: false,
+      };
+
+      const updated = [...allMyCity, newCity];
+      setAllMyCity(updated);
+      await saveCities(updated);
 
       Toast.show({
         type: 'success',
@@ -121,8 +130,8 @@ const AddCity = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <View style={{ padding: 20 }}>
+    <SafeAreaView style={{flex: 1}}>
+      <View style={{padding: 20}}>
         <AppHeader
           heading="Add City"
           subheading="Pollen Forecast"
@@ -157,7 +166,7 @@ const AddCity = ({ navigation }) => {
             padding: 10,
             marginTop: 20,
           }}>
-          <View style={{ gap: 10 }}>
+          <View style={{gap: 10}}>
             <AppButton
               title={'Add city'}
               bgColor={AppColors.BTNCOLOURS}

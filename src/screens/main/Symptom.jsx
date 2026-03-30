@@ -31,7 +31,7 @@ import DatePicker from 'react-native-date-picker';
 import { AllergyTips } from '../../utils/AllergyTips';
 import AppIntroSlider from 'react-native-app-intro-slider';
 import SubscribeBar from '../../components/SubscribeBar';
-import { setAllSymtomsToReduxFromApi } from '../../redux/Slices/SymtomsSlice';
+import { saveSymtoms, loadSymtoms } from '../../global/SymtomsFileCache';
 
 const Symptom = ({ navigation }) => {
   const screenWidth = Dimensions.get('window').width;
@@ -40,9 +40,10 @@ const Symptom = ({ navigation }) => {
 
   const expireDate = useSelector(state => state.auth.expireDate);
   const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
-  const AllSymtomsDataFromRedux = useSelector(
-    state => state?.symtoms?.AllSymtoms,
-  );
+  const [loader, setLoader] = useState(false);
+  const [endDate, setEndDate] = useState(moment().format('YYYY-MM-DD'));
+  const [endopen, setEndOpen] = useState(false);
+  const [graphSlides, setGraphSlides] = useState([]);
 
   const [randomTip, setRandomTip] = useState(null);
 
@@ -57,15 +58,8 @@ const Symptom = ({ navigation }) => {
 
   const [date, setDate] = useState(new Date(moment().local()));
   //start date states
-  const [endDate, setEndDate] = useState(moment().format('YYYY-MM-DD'));
-  const [endopen, setEndOpen] = useState(false);
-
-  const [loader, setLoader] = useState(false);
-
-  // console.log('endDate', endDate, 'startDate', selecteddate);
-
   const userData = useSelector(state => state?.auth?.user);
-  const [graphSlides, setGraphSlides] = useState([]);
+
 
   const mojis = [
     { id: 1, img: AppImages.Mask, title: 'Very Bad' },
@@ -89,15 +83,18 @@ const Symptom = ({ navigation }) => {
     },
   };
 
-  useEffect(() => {
-    setGraphSlides(AllSymtomsDataFromRedux);
-  }, [AllSymtomsDataFromRedux]);
+
 
   useEffect(() => {
-    const nav = navigation.addListener('focus', () => {
-      // setLoader(true);
-      generateGraphSlides(); // 👈
-      // getSymtomsData();
+    const nav = navigation.addListener('focus', async () => {
+      setLoader(true);
+      // Load from file cache on focus
+      const cached = await loadSymtoms();
+      if (cached) {
+        setGraphSlides(cached);
+      }
+
+      generateGraphSlides(selecteddate, cached); // Pass cached data to avoid re-fetch Check
 
       const random =
         AllergyTips[Math.floor(Math.random() * AllergyTips.length)];
@@ -105,7 +102,7 @@ const Symptom = ({ navigation }) => {
     });
 
     return nav;
-  }, [navigation]);
+  }, [navigation, selecteddate]);
 
   useEffect(() => {
     const nav = navigation.addListener('focus', () => {
@@ -125,10 +122,11 @@ const Symptom = ({ navigation }) => {
   const setApiSymtomsData = id => {
     const day = moment(selecteddate).format('D'); // returns "26"
 
-    const updateDatalocal = updateData(AllSymtomsDataFromRedux, day, id);
+    const updateDatalocal = updateData(graphSlides, day, id);
 
     if (updateDatalocal.length > 0) {
-      dispatch(setAllSymtomsToReduxFromApi(updateDatalocal));
+      setGraphSlides(updateDatalocal);
+      saveSymtoms(updateDatalocal);
       setSymtomsNumber(id);
       scrollToDateSlide(day)
       // sliderRef?.current?.goToSlide(graphSlides?.length - 1, false);
@@ -163,7 +161,7 @@ const Symptom = ({ navigation }) => {
         .request(config)
         .then(response => {
           // getSymtomsData();
-          generateGraphSlides(selecteddate);
+          generateGraphSlides(selecteddate, true); // force re-fetch if needed after API post or just let it be updated locally above
 
         })
         .catch(error => {
@@ -175,25 +173,16 @@ const Symptom = ({ navigation }) => {
   };
 
   // console.log("AllSymtomsDataFromRedux",AllSymtomsDataFromRedux)
-  const generateGraphSlides = async selectedDate => {
+  const generateGraphSlides = async (selectedDate, currentSlidesProp, forceFetch = false) => {
+    const currentSlides = currentSlidesProp || graphSlides;
 
-
-
-
-    if (AllSymtomsDataFromRedux?.length > 0) {
-
-      const lastName = AllSymtomsDataFromRedux?.at(-1)?.chartData?.labels?.at(-1);
+    if (currentSlides?.length > 0 && !forceFetch) {
+      const lastName = currentSlides?.at(-1)?.chartData?.labels?.at(-1);
       const currentDate = moment(new Date()).local().format('D');
-
-
 
       if (lastName === currentDate) {
         setLoader(false);
-        if (AllSymtomsDataFromRedux.length > 0) {
-          // setGraphSlides(AllSymtomsDataFromRedux)
-          setLoader(false);
-          return;
-        }
+        return;
       }
     }
 
@@ -251,9 +240,8 @@ const Symptom = ({ navigation }) => {
     const toDayDate = moment(new Date()).local().format('D');
     const selectedDateCopy = moment(selectedDate).local().format('D');
 
-    // if( slides[2]?.chartData?.labels[6] != toDayDate || slides[2]?.chartData?.labels[6] != selectedDateCopy ){
-    dispatch(setAllSymtomsToReduxFromApi(slides));
-    // }
+    setGraphSlides(slides);
+    await saveSymtoms(slides);
 
     setGraphSlides(slides);
     setLoader(false);
@@ -286,10 +274,7 @@ const Symptom = ({ navigation }) => {
 
   const scrollToDateSlide = (targetDay) => {
 
-    if (!AllSymtomsDataFromRedux || AllSymtomsDataFromRedux.length === 0) return;
-
-    // Find which slide contains this day
-    const foundIndex = AllSymtomsDataFromRedux.findIndex(slide =>
+    const foundIndex = graphSlides.findIndex(slide =>
       slide?.chartData?.labels?.includes(String(parseInt(targetDay)))
     );
 

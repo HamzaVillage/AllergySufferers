@@ -183,13 +183,15 @@ import axios from 'axios';
 import CheckSubscription from '../../global/CheckSubscription';
 import { Alert } from 'react-native';
 import ShowError from '../../utils/ShowError';
+import { saveSubscriptionCache, loadSubscriptionCache } from '../../global/SubscriptionCache';
+import moment from 'moment';
 
 const initialState = {
   user: null,
   showError: '',
   loader: false,
-  isExpired: true,
-  expireDate: '',
+  isExpired: false,
+  expireDate: null,
   transactionId: null,
   SubscriptionType: '',
   currentLocation: {
@@ -200,6 +202,45 @@ const initialState = {
   WatchPaidTut: false,
   LoggedIn: false
 };
+
+export const checkSubscriptionStatus = createAsyncThunk(
+  'auth/checkSubscription',
+  async (_, { getState, dispatch }) => {
+    const { user, expireDate } = getState().auth;
+    if (!user?.id) return;
+
+    console.log('🔄 Checking subscription status...');
+    const data = await CheckSubscription(user.id);
+
+    if (data && data.expiry) {
+      // API Success
+      const subInfo = {
+        isExpired: false,
+        expireDate: data.expiry,
+        SubscriptionType: data.type || '',
+        transactionId: data.transactionId || null,
+      };
+      await saveSubscriptionCache(subInfo);
+      return subInfo;
+    } else {
+      // API Failed or No Premium - Try Cache
+      console.log('⚠️ API failed or no premium returned, checking local cache...');
+      const cached = await loadSubscriptionCache();
+      
+      if (cached && cached.expireDate) {
+        // Validate if still biologically valid (not past current date)
+        const isStillValid = moment().isBefore(moment(cached.expireDate));
+        if (isStillValid) {
+          console.log('✅ Found valid subscription in cache:', cached.expireDate);
+          return { ...cached, isExpired: false };
+        }
+      }
+      
+      console.log('❌ No valid subscription found in cache or API.');
+      return { isExpired: true, expireDate: '', SubscriptionType: '', transactionId: null };
+    }
+  }
+);
 
 export const CurrentLogin = createAsyncThunk(
   'auth/login',
@@ -248,7 +289,15 @@ const AuthSlice = createSlice({
       state.isExpired = action.payload.isExpired;
       state.expireDate = action.payload.expireDate;
       state.SubscriptionType = action.payload.SubscriptionType;
-      state.transactionId = action.payload.transactionId
+      state.transactionId = action.payload.transactionId;
+      
+      // Save to cache whenever subscription is set manually (e.g. from AppSubscription)
+      saveSubscriptionCache({
+        isExpired: action.payload.isExpired,
+        expireDate: action.payload.expireDate,
+        SubscriptionType: action.payload.SubscriptionType,
+        transactionId: action.payload.transactionId,
+      });
     },
     setCurrentLatLng: (state, action) => {
       state.currentLocation.Lat = action.payload.Lat;
@@ -283,6 +332,14 @@ const AuthSlice = createSlice({
       })
       .addCase(CurrentLogin.rejected, state => {
         state.loader = false;
+      })
+      .addCase(checkSubscriptionStatus.fulfilled, (state, action) => {
+        if (action.payload) {
+          state.isExpired = action.payload.isExpired;
+          state.expireDate = action.payload.expireDate;
+          state.SubscriptionType = action.payload.SubscriptionType;
+          state.transactionId = action.payload.transactionId;
+        }
       });
   },
 });

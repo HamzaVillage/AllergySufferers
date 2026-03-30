@@ -8,8 +8,9 @@ import {
   ScrollView,
   Modal,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
-import React, { act, useEffect, useState } from 'react';
+import React, {act, useEffect, useState} from 'react';
 import AppHeader from '../../../../components/AppHeader';
 import AppText from '../../../../components/AppTextComps/AppText';
 import {
@@ -25,43 +26,36 @@ import SocialAuthButton from '../../../../components/SocialAuthButton';
 import AppTextInput from '../../../../components/AppTextInput';
 import Octicons from 'react-native-vector-icons/Octicons';
 import BASE_URL from '../../../../utils/BASE_URL';
-import { useDispatch, useSelector } from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import axios from 'axios';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import LoaderMode from '../../../../components/LoaderMode';
 import Toast from 'react-native-toast-message';
 import DatePicker from 'react-native-date-picker';
 import moment from 'moment';
-import { ApiCallWithUserId } from '../../../../global/ApiCall';
+import {ApiCallWithUserId} from '../../../../global/ApiCall';
 import {
-  GetAllMedicationFromApi,
-  setActiveMedication,
-  setCurrentActiveMedication,
-  UpdateMedicationListOnEveryDate,
-} from '../../../../redux/Slices/MedicationSlice';
+  saveCurrentMeds,
+  loadCurrentMeds,
+  saveActiveMedications,
+  loadActiveMedications,
+} from '../../../../global/MedicationFileCache';
+import {GetAllMedicationFromApi} from '../../../../redux/Slices/MedicationSlice';
 
-const AddMedications = ({ navigation }) => {
+const AddMedications = ({navigation}) => {
   const dispatch = useDispatch();
   const userData = useSelector(state => state.auth.user);
-  const allActiveMedicationRedux = useSelector(
-    state => state.medications.MyCurrentMeds,
-  );
+  const [allActiveMedicationRedux, setAllActiveMedicationRedux] = useState([]); // This maps to MyCurrentMeds in the original code
+  const [ActiveMedications, setActiveMedications] = useState([]); // This maps to daily records
+  const allMedication = useSelector(state => state.medications.AllMedication);
 
-  const ActiveMedications = useSelector(
-    state => state.medications.ActiveMedications,
-  );
-  const allMedication = useSelector(
-    state => state.medications.AllMedication,
-  );
-
-  const currentDate = moment().local().format('YYYY-MM-DD')
+  const currentDate = moment().local().format('YYYY-MM-DD');
   const currentDateMeds = ActiveMedications?.filter(
     item => item.date === currentDate,
   );
 
-
-  const expireDate = useSelector(state => state.auth.expireDate);
-  const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
+  const isExpired = useSelector(state => state.auth.isExpired);
+  const isPremium = !isExpired;
 
   const [medicationData, setMedicationsData] = useState([]);
   const [MedicationLoader, setMedciationLoader] = useState(false);
@@ -82,8 +76,12 @@ const AddMedications = ({ navigation }) => {
   // console.log('selectd date ====>',selecteddate)
 
   useEffect(() => {
-    const nav = navigation.addListener('focus', () => {
+    const nav = navigation.addListener('focus', async () => {
       getMedicationApi();
+      const cachedCurrentMeds = await loadCurrentMeds();
+      const cachedActiveMeds = await loadActiveMedications();
+      if (cachedCurrentMeds) setAllActiveMedicationRedux(cachedCurrentMeds);
+      if (cachedActiveMeds) setActiveMedications(cachedActiveMeds);
     });
     return nav;
   }, [navigation]);
@@ -106,7 +104,7 @@ const AddMedications = ({ navigation }) => {
       .request(config)
       .then(async response => {
         // console.log(JSON.stringify(response.data));
-        dispatch(GetAllMedicationFromApi(response.data.data))
+        dispatch(GetAllMedicationFromApi(response.data.data));
         setMedicationsData(response.data.data);
         setMedciationLoader(false);
         const MedicationData = await ApiCallWithUserId(
@@ -167,7 +165,6 @@ const AddMedications = ({ navigation }) => {
   // };
 
   const AddMedicationActive = medicationdata => {
-
     // console.log("expireDate",expireDate)
 
     if (!isPremium) {
@@ -182,11 +179,11 @@ const AddMedications = ({ navigation }) => {
           },
           {
             text: 'Subscribe Now',
-            onPress: () => navigation.navigate("Subscription"),
+            onPress: () => navigation.navigate('Subscription'),
             // You can replace the above with your subscription logic
           },
         ],
-        { cancelable: false },
+        {cancelable: false},
       );
       return;
     }
@@ -202,7 +199,7 @@ const AddMedications = ({ navigation }) => {
         text1: 'Limit Reached',
         text2: 'You can only have 7 medications. Please delete one first.',
         position: 'bottom',
-        visibilityTime: 1500
+        visibilityTime: 1500,
       });
       return;
     }
@@ -248,7 +245,7 @@ const AddMedications = ({ navigation }) => {
                   type: 'success',
                   text1: 'Medication added successfully',
                   position: 'bottom',
-                  visibilityTime: 800
+                  visibilityTime: 800,
                 });
               })
               .catch(error => {
@@ -262,8 +259,6 @@ const AddMedications = ({ navigation }) => {
   };
 
   const AddCustomMedication = () => {
-
-
     if (customMecication == '') {
       return Alert.alert('Please type a medication name');
     }
@@ -275,7 +270,7 @@ const AddMedications = ({ navigation }) => {
         text1: 'Limit Reached',
         text2: 'You can only have 7 medications. Please delete one first.',
         position: 'bottom',
-        visibilityTime: 1500
+        visibilityTime: 1500,
       });
       return;
     }
@@ -309,7 +304,7 @@ const AddMedications = ({ navigation }) => {
           type: 'success',
           text1: 'Custom medication added to your list.',
           position: 'bottom',
-          visibilityTime: 800
+          visibilityTime: 800,
         });
       })
       .catch(error => {
@@ -321,14 +316,12 @@ const AddMedications = ({ navigation }) => {
       });
   };
 
-
   // local functionality
-  const AddMedicationActiveToLocal = async (medData) => {
-
+  const AddMedicationActiveToLocal = async medData => {
     if (!isPremium) {
       Alert.alert(
-        'Subscribe', // Title of the alert
-        'Subscribe to add the pollens', // Message
+        'Subscribe',
+        'Subscribe to add the pollens',
         [
           {
             text: 'Cancel',
@@ -337,11 +330,10 @@ const AddMedications = ({ navigation }) => {
           },
           {
             text: 'Subscribe Now',
-            onPress: () => navigation.navigate("Subscription"),
-            // You can replace the above with your subscription logic
+            onPress: () => navigation.navigate('Subscription'),
           },
         ],
-        { cancelable: false },
+        {cancelable: false},
       );
       return;
     }
@@ -357,48 +349,68 @@ const AddMedications = ({ navigation }) => {
         text1: 'Limit Reached',
         text2: 'You can only have 7 medications. Please delete one first.',
         position: 'bottom',
-        visibilityTime: 1500
+        visibilityTime: 1500,
       });
       return;
     }
 
-    // if(allActiveMedicationRedux.length == 7 || allActiveMedicationRedux.length > 7 ){
-    //   Toast.show({
-    //     type: 'error',
-    //     text1: 'You can only add 7 medications at a time',
-    //     position:'bottom',
-    //     visibilityTime:800
-    //   });
-    //   return
-    // }
-    AddMedicationToPreviousDates(medData)
+    const exists = allActiveMedicationRedux.some(med => med.id === medData.id);
+    if (exists) {
+      Toast.show({
+        type: 'info',
+        text1: 'Already Added',
+        text2: 'This medication is already in your list.',
+        position: 'bottom',
+        visibilityTime: 1500,
+      });
+      return;
+    }
 
-    dispatch(setCurrentActiveMedication(medData));
+    // Read fresh data from cache to avoid overwriting other screens' data
+    const freshCurrentMeds = (await loadCurrentMeds()) || [];
+    const freshActiveMeds = (await loadActiveMedications()) || [];
+
+    const updatedCurrentMeds = [...freshCurrentMeds, medData];
+    setAllActiveMedicationRedux(updatedCurrentMeds);
+    await saveCurrentMeds(updatedCurrentMeds);
+
+    // Add to daily records for today
+    const currentDay = moment().local().format('YYYY-MM-DD');
+    const recordExists = freshActiveMeds.some(
+      med => (med.medication_id || med.id) === medData.id && med.date === currentDay,
+    );
+
+    if (!recordExists) {
+      const updatedActiveMeds = [...freshActiveMeds, {
+        ...medData,
+        date: currentDay,
+        units: 0,
+      }];
+      setActiveMedications(updatedActiveMeds);
+      await saveActiveMedications(updatedActiveMeds);
+    }
+
     Toast.show({
       type: 'success',
-      text1: 'Medication added in your daily intake',
+      text1: 'Medication added to your list',
       position: 'bottom',
-      visibilityTime: 800
+      visibilityTime: 800,
     });
 
-    const medicationUpdate = await ApiCallWithUserId("post", "set_medications", userData?.id, { "data": [medData.id] })
-
-    console.log("medicationUpdate", medicationUpdate)
+    await ApiCallWithUserId('post', 'set_medications', userData?.id, {
+      data: [medData.id],
+    });
   };
 
-
-  const AddMedicationToPreviousDates = (medData) => {
-    dispatch(UpdateMedicationListOnEveryDate(medData))
-  }
+  const AddMedicationToPreviousDates = medData => {
+    dispatch(UpdateMedicationListOnEveryDate(medData));
+  };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <View style={{ padding: 20 }}>
-        <View style={{ marginBottom: 10 }}>
-          <AppHeader
-            heading={`Add ${'\n'}Medications`}
-            goBack
-          />
+    <SafeAreaView style={{flex: 1}}>
+      <View style={{padding: 20}}>
+        <View style={{marginBottom: 10}}>
+          <AppHeader heading={`Add ${'\n'}Medications`} goBack />
         </View>
 
         <DatePicker
@@ -424,11 +436,11 @@ const AddMedications = ({ navigation }) => {
 
         <Modal
           visible={addYourMedication}
-          style={{ padding: 20 }}
+          style={{padding: 20}}
           animationType="fade">
-          <View style={{ padding: 20 }}>
+          <View style={{padding: 20}}>
             <TouchableOpacity
-              style={{ height: 30, width: 30 }}
+              style={{height: 30, width: 30}}
               onPress={() => SetAddYourMedication(false)}>
               <AppText title={'X'} textSize={3} />
             </TouchableOpacity>
@@ -449,7 +461,7 @@ const AddMedications = ({ navigation }) => {
               value={customMecication}
             />
 
-            <View style={{ marginTop: 20 }}>
+            <View style={{marginTop: 20}}>
               <AppButton
                 title={'Add Medication'}
                 handlePress={() => AddCustomMedication()}
@@ -459,7 +471,7 @@ const AddMedications = ({ navigation }) => {
           </View>
         </Modal>
 
-        <View style={{ gap: 10 }}>
+        <View style={{gap: 10}}>
           <AppTextInput
             inputPlaceHolder={'Search Medications'}
             textInput={true}
@@ -471,32 +483,38 @@ const AddMedications = ({ navigation }) => {
               flexGrow: 1,
               paddingBottom: responsiveHeight(80),
             }}>
-            {allMedication?.length > 0 ? (
+            {MedicationLoader ? (
+              <View style={{alignItems: 'center', marginTop: 20}}>
+                <ActivityIndicator size="large" color={AppColors.BTNCOLOURS} />
+                <AppText title={'Loading medications...'} marginTop={10} />
+              </View>
+            ) : allMedication?.length > 0 ? (
               <>
                 {allMedication
                   ?.filter(item =>
                     item.name
-                      .toLowerCase()
+                      ?.toLowerCase()
                       .includes(search.trim().toLowerCase()),
                   )
                   .map((item, index) => {
+                    const isFirst = index === 0;
+                    const isLast = index === allMedication.length - 1;
                     return (
                       <TouchableOpacity
+                        key={item.id}
                         onPress={() => AddMedicationActiveToLocal(item)}
                         style={{
                           borderWidth: 1,
-                          borderTopRightRadius: index == 0 ? 10 : 0,
-                          borderTopLeftRadius: index == 0 ? 10 : 0,
-                          borderBottomRightRadius:
-                            index == allMedication?.length - 1 ? 10 : 0,
-                          borderBottomLeftRadius:
-                            index == allMedication?.length - 1 ? 10 : 0,
+                          borderTopRightRadius: isFirst ? 10 : 0,
+                          borderTopLeftRadius: isFirst ? 10 : 0,
+                          borderBottomRightRadius: isLast ? 10 : 0,
+                          borderBottomLeftRadius: isLast ? 10 : 0,
                           padding: 20,
                           flexDirection: 'row',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          // borderBottomWidth:
-                          //   index == medicationData?.length - 1 ? 1 : 0,
+                          borderColor: AppColors.LIGHTGRAY,
+                          marginTop: isFirst ? 0 : -1, // collapse borders
                         }}>
                         <View
                           style={{
@@ -504,14 +522,11 @@ const AddMedications = ({ navigation }) => {
                             gap: 10,
                             alignItems: 'center',
                           }}>
-                          <View>
-                            <AntDesign
-                              name={'pluscircle'}
-                              size={responsiveFontSize(2.5)}
-                              color={AppColors.BTNCOLOURS}
-                            />
-                          </View>
-
+                          <AntDesign
+                            name={'pluscircle'}
+                            size={responsiveFontSize(2.5)}
+                            color={AppColors.BTNCOLOURS}
+                          />
                           <AppText
                             title={item.name}
                             textSize={2}
@@ -531,7 +546,14 @@ const AddMedications = ({ navigation }) => {
                   justifyContent: 'center',
                   paddingTop: 20,
                 }}>
-                <AppText title={'Please buy a subscription'} textSize={2.2} />
+                <AppText
+                  title={
+                    !isPremium
+                      ? 'Please buy a subscription to add medications'
+                      : 'No medications found'
+                  }
+                  textSize={2.2}
+                />
               </View>
             )}
           </ScrollView>

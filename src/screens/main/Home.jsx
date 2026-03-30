@@ -11,7 +11,7 @@ import {
   Alert,
   StyleSheet,
 } from 'react-native';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import LinearGradient from 'react-native-linear-gradient';
 import {
   responsiveFontSize,
@@ -27,7 +27,7 @@ import AppImages from '../../assets/images/AppImages';
 import SpeedoMeter from '../../components/SpeedoMeter';
 import SelectionButton from '../../components/SelectionButton';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import { useDispatch, useSelector } from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import axios from 'axios';
 import BASE_URL from '../../utils/BASE_URL';
 import DatePicker from 'react-native-date-picker';
@@ -39,9 +39,9 @@ import AppButton from '../../components/AppButton';
 import PointPollenSpores from '../../components/PointPollenSpores';
 // import AddCityApi from '../../global/AddCityApi';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { GetCurrentLocation } from '../../global/GetCurrentLocation';
-import { GetCityName } from '../../global/GetCityName';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
+import {GetCurrentLocation} from '../../global/GetCurrentLocation';
+import {GetCityName} from '../../global/GetCityName';
 import {
   setAddCity,
   setAllCityFromApi,
@@ -60,26 +60,22 @@ import {
   setWatchPaidTut,
 } from '../../redux/Slices/AuthSlice';
 import SubscribeNow from '../../global/SubscribeNow';
-import { ApiCallWithUserId } from '../../global/ApiCall';
-import {
-  clearForaCastSlive,
-  removeForeCastSlice,
-  setForeCastSlice,
-  updateYesterdaySavedForcast,
-} from '../../redux/Slices/ForecastSlice';
-import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+import {ApiCallWithUserId} from '../../global/ApiCall';
+import {saveForecast, loadAllForecasts} from '../../global/ForecastFileCache';
+import {saveCities, loadCities} from '../../global/CityFileCache';
+import {BannerAd, BannerAdSize, TestIds} from 'react-native-google-mobile-ads';
 
-const Home = ({ navigation }) => {
+const Home = ({navigation}) => {
   const bannerAdUnitId = __DEV__
     ? TestIds.BANNER
     : 'ca-app-pub-8551767929999166/4471222920'; // replace with your real ad id
 
   Geocoder.init('AIzaSyD3LZ2CmmJizWJlnW4u3fYb44RJvVuxizc'); // use a valid API key
-  const AllForcast = useSelector(state => state?.forecast?.AllForcast);
+  const [allForecasts, setAllForecasts] = useState([]);
   const dispatch = useDispatch();
   const LoggedIn = useSelector(state => state?.auth?.LoggedIn);
   const userData = useSelector(state => state?.auth?.user);
-  const AllCities = useSelector(state => state?.medications?.allMyCity);
+  const [AllCities, setAllCities] = useState([]);
   const subscriptionType = useSelector(state => state?.auth?.SubscriptionType);
   const transactionId = useSelector(state => state?.auth?.transactionId);
   const transactionDate = useSelector(state => state?.auth?.transactionDate);
@@ -97,13 +93,14 @@ const Home = ({ navigation }) => {
   const sliderRef = useRef(null);
 
   // console.log('AllCities', AllCities);
-  const sortCities = [...AllCities].sort((a, b) => {
-    return (
-      (b.currentLocation || b.isCurrentLocation ? 1 : 0) -
-      (a.currentLocation || a.isCurrentLocation ? 1 : 0)
-    );
-  });
-
+  const sortCities = useMemo(() => {
+    return [...AllCities].sort((a, b) => {
+      return (
+        (b.currentLocation || b.isCurrentLocation ? 1 : 0) -
+        (a.currentLocation || a.isCurrentLocation ? 1 : 0)
+      );
+    });
+  }, [AllCities]);
 
   const [fetchingCurrentLocation, setFechingCurrentLocation] = useState(false);
 
@@ -205,21 +202,38 @@ const Home = ({ navigation }) => {
 
   useFocusEffect(
     useCallback(() => {
-      if (AllCities && AllCities.length > 0) {
-        getPollensData(sortCities, 0);
+      const loadOnFocus = async () => {
+        // Load cached forecasts from files on focus
+        const cachedForecasts = await loadAllForecasts();
+        setAllForecasts(cachedForecasts);
 
-        const findTheIndex = sortCities?.findIndex(
-          res => res.currentLocation == true,
-        );
-
-        if (findTheIndex !== -1 && sliderRef?.current) {
-          sliderRef?.current?.goToSlide(findTheIndex, false);
+        // Always reload cities from cache (picks up cities added in AddCity)
+        const { loadCities: loadCitiesFromCache } = require('../../global/CityFileCache');
+        const cachedCities = await loadCitiesFromCache();
+        if (cachedCities && cachedCities.length > 0) {
+          setAllCities(cachedCities);
+        } else {
+          GetLocationFromApi();
         }
-      } else {
-        GetLocationFromApi();
-      }
-    }, [AllCities]),
+      };
+      loadOnFocus();
+    }, []),
   );
+
+  // When AllCities updates (e.g. from cache reload or API), fetch pollen data
+  useEffect(() => {
+    if (AllCities && AllCities.length > 0) {
+      getPollensData(sortCities, 0);
+
+      const findTheIndex = sortCities?.findIndex(
+        res => res.currentLocation == true,
+      );
+
+      if (findTheIndex !== -1 && sliderRef?.current) {
+        sliderRef?.current?.goToSlide(findTheIndex, false);
+      }
+    }
+  }, [AllCities]);
 
   // dispatch(removeForeCastSlice())
 
@@ -228,16 +242,24 @@ const Home = ({ navigation }) => {
     const currentDatet = moment().local().format('MMMM Do, YYYY');
 
     // Robust search for forecast by city name
-    const cachedForecast = AllForcast.find(f => {
-      const forecastCity = f?.user?.locations?.closest?.name?.toLowerCase()?.trim();
+    const cachedForecast = allForecasts.find(f => {
+      const forecastCity = f?.user?.locations?.closest?.name
+        ?.toLowerCase()
+        ?.trim();
       const searchCity = targetCityName?.toLowerCase()?.trim();
-      return forecastCity === searchCity ||
-        (forecastCity && searchCity && (forecastCity.includes(searchCity) || searchCity.includes(forecastCity)));
+      return (
+        forecastCity === searchCity ||
+        (forecastCity &&
+          searchCity &&
+          (forecastCity.includes(searchCity) ||
+            searchCity.includes(forecastCity)))
+      );
     });
 
     // Use the actual city name from the cached object for data access
     const apiCityName = cachedForecast?.user?.locations?.closest?.name;
-    const LocalSavedUserDate = cachedForecast?.forecast?.[apiCityName]?.today?.date_label;
+    const LocalSavedUserDate =
+      cachedForecast?.forecast?.[apiCityName]?.today?.date_label;
 
     if (cachedForecast && LocalSavedUserDate === currentDatet) {
       setForcastLocal(JSON.parse(JSON.stringify(cachedForecast)));
@@ -263,20 +285,24 @@ const Home = ({ navigation }) => {
 
     axios
       .request(config)
-      .then(response => {
+      .then(async response => {
         const res = response.data;
         const city = res?.user?.locations?.closest?.name;
 
         // Check again if the date is current (safety)
-        const isToday = res?.forecast?.[city]?.today?.date_label === currentDatet;
+        const isToday =
+          res?.forecast?.[city]?.today?.date_label === currentDatet;
 
-        if (isToday) {
-          const alreadyInRedux = AllForcast.some(f => f?.user?.locations?.closest?.name === city);
-          if (alreadyInRedux) {
-            dispatch(updateYesterdaySavedForcast({ data: res, city }));
-          } else {
-            dispatch(setForeCastSlice({ data: res, city }));
-          }
+        if (isToday && city) {
+          // Save to file cache
+          await saveForecast(city, res);
+          // Update local state
+          setAllForecasts(prev => {
+            const filtered = prev.filter(
+              f => f?.user?.locations?.closest?.name !== city,
+            );
+            return [...filtered, res];
+          });
         }
 
         setForcastLocal(res);
@@ -294,7 +320,8 @@ const Home = ({ navigation }) => {
 
       // console.log('getLocationFromApi.cities', getLocationFromApi);
       if (getLocationFromApi?.cities?.length > 0) {
-        dispatch(setAllCityFromApi(getLocationFromApi.cities));
+        setAllCities(getLocationFromApi.cities);
+        saveCities(getLocationFromApi.cities);
       } else {
         console.log('no cities found in cities');
       }
@@ -332,14 +359,19 @@ const Home = ({ navigation }) => {
       sliderRef?.current?.goToSlide(findTheIndex, false);
     }
 
-    dispatch(
-      setAddCity({
-        lat: JSON.stringify(gettingCurrentLatlng?.latitude),
-        lng: JSON.stringify(gettingCurrentLatlng?.longitude),
-        city_name: getCityName,
-        currentLocation: true,
-      }),
-    );
+    const newCity = {
+      lat: JSON.stringify(gettingCurrentLatlng?.latitude),
+      lng: JSON.stringify(gettingCurrentLatlng?.longitude),
+      city_name: getCityName,
+      currentLocation: true,
+    };
+
+    setAllCities(prev => {
+      const filtered = prev.filter(c => c.currentLocation !== true);
+      const updated = [...filtered, newCity];
+      saveCities(updated);
+      return updated;
+    });
 
     setFechingCurrentLocation(false);
   };
@@ -417,12 +449,12 @@ const Home = ({ navigation }) => {
       // console.log('foreaching', item, index);
 
       if (item.type === 'pollen' && !pollenHeaderAdded) {
-        Headings.push({ type: 'header', title: 'Pollen', index: index });
+        Headings.push({type: 'header', title: 'Pollen', index: index});
         pollenHeaderAdded = true;
       }
 
       if (item.type === 'spore' && !sporesHeaderAdded) {
-        Headings.push({ type: 'header', title: 'Spores', index: index });
+        Headings.push({type: 'header', title: 'Spores', index: index});
         sporesHeaderAdded = true;
       }
     });
@@ -436,25 +468,29 @@ const Home = ({ navigation }) => {
     {
       id: 1,
       name: 'Total Spores',
-      value: todayPollensData?.total_spores, type: "spore",
+      value: todayPollensData?.total_spores,
+      type: 'spore',
       type: 'spore',
     },
     {
       id: 2,
       name: 'Total Trees',
-      value: todayPollensData?.total_trees, type: "pollen",
+      value: todayPollensData?.total_trees,
+      type: 'pollen',
       type: 'pollen',
     },
     {
       id: 3,
       name: 'Total Grasses',
-      value: todayPollensData?.total_grasses, type: "pollen",
+      value: todayPollensData?.total_grasses,
+      type: 'pollen',
       type: 'pollen',
     },
     {
       id: 4,
       name: 'Total Weeds',
-      value: todayPollensData?.total_weeds, type: "pollen",
+      value: todayPollensData?.total_weeds,
+      type: 'pollen',
       type: 'pollen',
     },
   ];
@@ -503,8 +539,6 @@ const Home = ({ navigation }) => {
       setTodayPollensData(today);
       setFuturePollenData(future);
 
-
-
       setIsPastArray(pastArray);
       setIsFutureArray(futureArray);
 
@@ -519,12 +553,7 @@ const Home = ({ navigation }) => {
   return (
     <>
       <LinearGradient
-        colors={[
-          getThBgColour(
-            todayPollensData?.label,
-          ),
-          AppColors.WHITE,
-        ]}
+        colors={[getThBgColour(todayPollensData?.label), AppColors.WHITE]}
         // colors={[animatedColor, AppColors.WHITE]} // 🎯 animated start, static end
         style={{
           height: responsiveHeight(100),
@@ -554,7 +583,7 @@ const Home = ({ navigation }) => {
         ) : (
           <>
             {AllCities.length > 0 ? (
-              <View style={{ flex: 1 }}>
+              <View style={{flex: 1}}>
                 <ScrollView
                   nestedScrollEnabled
                   contentContainerStyle={{
@@ -564,7 +593,6 @@ const Home = ({ navigation }) => {
                     marginTop: 30,
                   }}
                   showsVerticalScrollIndicator={false}>
-
                   <View
                     style={{
                       flexDirection: 'row',
@@ -600,7 +628,10 @@ const Home = ({ navigation }) => {
                   </View>
                   {loadCities == true ? (
                     <>
-                      <ActivityIndicator size={'large'} color={AppColors.BLACK} />
+                      <ActivityIndicator
+                        size={'large'}
+                        color={AppColors.BLACK}
+                      />
                     </>
                   ) : (
                     <AppIntroSlider
@@ -617,7 +648,7 @@ const Home = ({ navigation }) => {
                       showDoneButton={false}
                       showNextButton={false}
                       onSlideChange={index => getPollensData(sortCities, index)}
-                      renderItem={({ item, index }) => {
+                      renderItem={({item, index}) => {
                         return (
                           <>
                             <View
@@ -626,20 +657,20 @@ const Home = ({ navigation }) => {
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
                               }}>
-                              <View style={{ flexDirection: 'row', gap: 5 }}>
+                              <View style={{flexDirection: 'row', gap: 5}}>
                                 {item?.currentLocation ? (
                                   <FontAwesome6
                                     name={'location-dot'}
                                     size={responsiveFontSize(2)}
                                     color={AppColors.BLUE}
-                                    style={{ marginTop: 6 }}
+                                    style={{marginTop: 6}}
                                   />
                                 ) : (
                                   <FontAwesome
                                     name={'map'}
                                     size={responsiveFontSize(2)}
                                     color={AppColors.BLUE}
-                                    style={{ marginTop: 6 }}
+                                    style={{marginTop: 6}}
                                   />
                                 )}
                                 <View>
@@ -674,7 +705,9 @@ const Home = ({ navigation }) => {
                               ) : ( */}
                                 <AppText
                                   // title={pollenData?.today?.text}
-                                  title={moment().local().format('MMMM Do, YYYY')}
+                                  title={moment()
+                                    .local()
+                                    .format('MMMM Do, YYYY')}
                                   textColor={'#777777'}
                                 />
                                 {/* )} */}
@@ -705,7 +738,7 @@ const Home = ({ navigation }) => {
                     />
                   )}
 
-                  <View style={{ flexDirection: 'row', gap: 5 }}>
+                  <View style={{flexDirection: 'row', gap: 5}}>
                     {activeLoader == true ? (
                       <View
                         style={{
@@ -717,11 +750,12 @@ const Home = ({ navigation }) => {
                         <ActivityIndicator
                           size={'large'}
                           color={AppColors.BLACK}
-                          style={{ alignSelf: 'center' }}
+                          style={{alignSelf: 'center'}}
                         />
                       </View>
                     ) : (
-                      <View style={{ flexDirection: 'row' }}>
+                      <View style={{flexDirection: 'row'}}>
+                        {/* {console.log('activeDataForDials', activeDataForDials)} */}
                         {isPremium ? (
                           <>
                             {todayPollensData?.current?.length > 0 ? (
@@ -733,20 +767,24 @@ const Home = ({ navigation }) => {
                                   gap: 20,
                                   flexDirection: 'row',
                                 }}
-                                renderItem={({ item }) => {
-                                  // console.log(
-                                  //   'todayPollensData?.current',
-                                  //   item,
-                                  // );
+                                renderItem={({item}) => {
                                   const activeDataForDials =
                                     todayPollensData?.current;
+                                  console.log(
+                                    'todayPollensData?.current',
+                                    item,
+                                  );
 
-                                  const index = (activeDataForDials || []).findIndex(
+                                  const index = (
+                                    activeDataForDials || []
+                                  ).findIndex(
                                     p =>
-                                      p.scientific_name?.toLowerCase() ===
-                                      item.name?.toLowerCase() ||
+                                      p?.scientific_name?.toLowerCase() ===
+                                        item.name?.toLowerCase() ||
                                       p.name?.toLowerCase() ===
-                                      item.common_name?.toLowerCase() ||
+                                        item.common_name?.toLowerCase() ||
+                                      p?.scientific_name?.toLowerCase() ===
+                                        item?.common_name?.toLowerCase() ||
                                       (item.common_name
                                         ?.toLowerCase()
                                         .includes('cedar') &&
@@ -768,14 +806,12 @@ const Home = ({ navigation }) => {
                                       (item.common_name
                                         ?.toLowerCase()
                                         .includes('oak') &&
-                                        p.name
-                                          ?.toLowerCase()
-                                          .includes('oak')),
+                                        p.name?.toLowerCase().includes('oak')),
                                   );
                                   const todayPollenInAir = activeDataForDials;
 
                                   return (
-                                    <View style={{ gap: 10 }}>
+                                    <View style={{gap: 10}}>
                                       <AppText
                                         title={item.common_name}
                                         textAlignment={'center'}
@@ -794,13 +830,16 @@ const Home = ({ navigation }) => {
                                         TextBottom={
                                           todayPollenInAir[index]?.level == 1
                                             ? 'Low'
-                                            : todayPollenInAir[index]?.level == 2
-                                              ? 'Moderate'
-                                              : todayPollenInAir[index]?.level == 3
-                                                ? 'High'
-                                                : todayPollenInAir[index]?.level == 4
-                                                  ? 'Very High'
-                                                  : 'None'
+                                            : todayPollenInAir[index]?.level ==
+                                              2
+                                            ? 'Moderate'
+                                            : todayPollenInAir[index]?.level ==
+                                              3
+                                            ? 'High'
+                                            : todayPollenInAir[index]?.level ==
+                                              4
+                                            ? 'Very High'
+                                            : 'None'
                                         }
                                         isPollenorSpores={
                                           todayPollenInAir[index]?.type
@@ -820,9 +859,9 @@ const Home = ({ navigation }) => {
                                   gap: 20,
                                   flexDirection: 'row',
                                 }}
-                                renderItem={({ item }) => {
+                                renderItem={({item}) => {
                                   return (
-                                    <View style={{ gap: 10 }}>
+                                    <View style={{gap: 10}}>
                                       <AppText
                                         title={item.name}
                                         textAlignment={'center'}
@@ -850,9 +889,9 @@ const Home = ({ navigation }) => {
                             <FlatList
                               data={freeData}
                               horizontal
-                              renderItem={({ item }) => {
+                              renderItem={({item}) => {
                                 return (
-                                  <View style={{ gap: 10 }}>
+                                  <View style={{gap: 10}}>
                                     <AppText
                                       title={item.name}
                                       textAlignment={'center'}
@@ -872,12 +911,12 @@ const Home = ({ navigation }) => {
                                         item.value == 1
                                           ? 'Low'
                                           : item.value == 2
-                                            ? 'Moderate'
-                                            : item.value == 3
-                                              ? 'High'
-                                              : item.value == 4
-                                                ? 'Very High'
-                                                : 'None'
+                                          ? 'Moderate'
+                                          : item.value == 3
+                                          ? 'High'
+                                          : item.value == 4
+                                          ? 'Very High'
+                                          : 'None'
                                       }
                                       isPollenorSpores={item.type}
                                       TempreaturePriorityFontSize={1.6}
@@ -892,7 +931,8 @@ const Home = ({ navigation }) => {
                     )}
                   </View>
 
-                  <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+                  <View
+                    style={{flexDirection: 'row', gap: 10, marginBottom: 20}}>
                     <SelectionButton
                       title="Past"
                       setSelected={() => setSelected('Past')}
@@ -940,9 +980,9 @@ const Home = ({ navigation }) => {
                           {isPremium ? (
                             <FlatList
                               data={ispastArray}
-                              contentContainerStyle={{ paddingTop: 100 }}
+                              contentContainerStyle={{paddingTop: 100}}
                               inverted
-                              renderItem={({ item, index }) => {
+                              renderItem={({item, index}) => {
                                 const pastPollenAndSpores = item?.current?.sort(
                                   (a, b) => {
                                     if (a.type !== b.type) {
@@ -971,12 +1011,17 @@ const Home = ({ navigation }) => {
                                     style={{
                                       borderWidth: 1,
                                       borderTopRightRadius:
-                                        index == ispastArray?.length - 1 ? 10 : 0,
+                                        index == ispastArray?.length - 1
+                                          ? 10
+                                          : 0,
                                       borderTopLeftRadius:
-                                        index == ispastArray?.length - 1 ? 10 : 0,
+                                        index == ispastArray?.length - 1
+                                          ? 10
+                                          : 0,
                                       borderBottomRightRadius:
                                         index == 0 ? 10 : 0,
-                                      borderBottomLeftRadius: index == 0 ? 10 : 0,
+                                      borderBottomLeftRadius:
+                                        index == 0 ? 10 : 0,
                                       padding: 20,
 
                                       alignItems: 'flex-start',
@@ -1225,9 +1270,9 @@ const Home = ({ navigation }) => {
                                         const indexes = item.current.findIndex(
                                           active =>
                                             active.scientific_name?.toLowerCase() ===
-                                            newItem.name?.toLowerCase() ||
+                                              newItem.name?.toLowerCase() ||
                                             active.name?.toLowerCase() ===
-                                            newItem.common_name?.toLowerCase() ||
+                                              newItem.common_name?.toLowerCase() ||
                                             (newItem.common_name
                                               ?.toLowerCase()
                                               .includes('cedar') &&
@@ -1276,18 +1321,19 @@ const Home = ({ navigation }) => {
                                               speedometerWidth={30}
                                               imageTop={-10}
                                               TextBottom={
-                                                item?.current[indexes]?.level == 1
+                                                item?.current[indexes]?.level ==
+                                                1
                                                   ? 'Low'
                                                   : item?.current[indexes]
-                                                    ?.level == 2
-                                                    ? 'Moderate'
-                                                    : item?.current[indexes]
+                                                      ?.level == 2
+                                                  ? 'Moderate'
+                                                  : item?.current[indexes]
                                                       ?.level == 3
-                                                      ? 'High'
-                                                      : item?.current[indexes]
-                                                        ?.level == 4
-                                                        ? 'Very High'
-                                                        : 'None'
+                                                  ? 'High'
+                                                  : item?.current[indexes]
+                                                      ?.level == 4
+                                                  ? 'Very High'
+                                                  : 'None'
                                               }
                                               isPollenorSpores={
                                                 item?.current[indexes]?.type
@@ -1300,22 +1346,23 @@ const Home = ({ navigation }) => {
                                     </ScrollView>
 
                                     {expandedFutureKey === item.key && (
-                                      <View style={{ marginTop: 20 }}>
+                                      <View style={{marginTop: 20}}>
                                         <FlatList
                                           data={pastPollenAndSpores}
-                                          renderItem={({ item, index }) => {
+                                          renderItem={({item, index}) => {
                                             return (
-                                              <View style={{ gap: 5 }}>
+                                              <View style={{gap: 5}}>
                                                 {index ===
                                                   pastpollenHeaderIndex && (
-                                                    <AppText
-                                                      title="Pollen"
-                                                      textSize={2}
-                                                      textFontWeight
-                                                    />
-                                                  )}
+                                                  <AppText
+                                                    title="Pollen"
+                                                    textSize={2}
+                                                    textFontWeight
+                                                  />
+                                                )}
 
-                                                {index === sporesHeaderIndex && (
+                                                {index ===
+                                                  sporesHeaderIndex && (
                                                   <AppText
                                                     title="Spores"
                                                     textSize={2}
@@ -1367,8 +1414,8 @@ const Home = ({ navigation }) => {
                           {isPremium ? (
                             <FlatList
                               data={sortedPollenData}
-                              contentContainerStyle={{ paddingBottom: 50 }}
-                              renderItem={({ item, index }) => {
+                              contentContainerStyle={{paddingBottom: 50}}
+                              renderItem={({item, index}) => {
                                 // console.log('setting data ===>',sortedPollenData)
                                 const pollenHeaderIndex = settingData.find(
                                   h => h.title === 'Pollen',
@@ -1378,7 +1425,7 @@ const Home = ({ navigation }) => {
                                 )?.index;
 
                                 return (
-                                  <View style={{ gap: 8 }}>
+                                  <View style={{gap: 8}}>
                                     {index === pollenHeaderIndex && (
                                       <AppText
                                         title="Pollen"
@@ -1430,10 +1477,10 @@ const Home = ({ navigation }) => {
                           {isfutureArray?.length > 0 && (
                             <FlatList
                               data={isfutureArray}
-                              contentContainerStyle={{ paddingBottom: 50 }}
-                              renderItem={({ item, index }) => {
-                                const futurePollenAndSpores = item?.current?.sort(
-                                  (a, b) => {
+                              contentContainerStyle={{paddingBottom: 50}}
+                              renderItem={({item, index}) => {
+                                const futurePollenAndSpores =
+                                  item?.current?.sort((a, b) => {
                                     if (a.type !== b.type) {
                                       return a.type === 'pollen' ? -1 : 1;
                                     }
@@ -1443,8 +1490,7 @@ const Home = ({ navigation }) => {
                                     const nameA = a.common_name || a.name || '';
                                     const nameB = b.common_name || b.name || '';
                                     return nameA.localeCompare(nameB);
-                                  },
-                                );
+                                  });
 
                                 // console.log('item, future', item);
 
@@ -1589,9 +1635,9 @@ const Home = ({ navigation }) => {
                                               item.current.findIndex(
                                                 active =>
                                                   active.scientific_name?.toLowerCase() ===
-                                                  newItem.name?.toLowerCase() ||
+                                                    newItem.name?.toLowerCase() ||
                                                   active.name?.toLowerCase() ===
-                                                  newItem.common_name?.toLowerCase() ||
+                                                    newItem.common_name?.toLowerCase() ||
                                                   (newItem.common_name
                                                     ?.toLowerCase()
                                                     .includes('cedar') &&
@@ -1644,15 +1690,15 @@ const Home = ({ navigation }) => {
                                                       ?.level == 1
                                                       ? 'Low'
                                                       : item?.current[indexes]
-                                                        ?.level == 2
-                                                        ? 'Moderate'
-                                                        : item?.current[indexes]
+                                                          ?.level == 2
+                                                      ? 'Moderate'
+                                                      : item?.current[indexes]
                                                           ?.level == 3
-                                                          ? 'High'
-                                                          : item?.current[indexes]
-                                                            ?.level == 4
-                                                            ? 'Very High'
-                                                            : 'None'
+                                                      ? 'High'
+                                                      : item?.current[indexes]
+                                                          ?.level == 4
+                                                      ? 'Very High'
+                                                      : 'None'
                                                   }
                                                   isPollenorSpores={
                                                     item?.current[indexes]?.type
@@ -1669,7 +1715,7 @@ const Home = ({ navigation }) => {
                                         <>
                                           {FuturefreeData.map(newItem => {
                                             return (
-                                              <View style={{ gap: 10 }}>
+                                              <View style={{gap: 10}}>
                                                 <AppText
                                                   title={newItem?.name}
                                                   textAlignment={'center'}
@@ -1689,14 +1735,16 @@ const Home = ({ navigation }) => {
                                                     newItem?.value == 1
                                                       ? 'Low'
                                                       : newItem?.value == 2
-                                                        ? 'Moderate'
-                                                        : newItem?.value == 3
-                                                          ? 'High'
-                                                          : newItem?.value == 4
-                                                            ? 'Very High'
-                                                            : 'None'
+                                                      ? 'Moderate'
+                                                      : newItem?.value == 3
+                                                      ? 'High'
+                                                      : newItem?.value == 4
+                                                      ? 'Very High'
+                                                      : 'None'
                                                   }
-                                                  isPollenorSpores={newItem.type}
+                                                  isPollenorSpores={
+                                                    newItem.type
+                                                  }
                                                   TempreaturePriorityFontSize={
                                                     1.6
                                                   }
@@ -1709,13 +1757,14 @@ const Home = ({ navigation }) => {
                                     </ScrollView>
 
                                     {expandedFutureKey === item.key && (
-                                      <View style={{ marginTop: 20 }}>
+                                      <View style={{marginTop: 20}}>
                                         <FlatList
                                           data={futurePollenAndSpores}
-                                          renderItem={({ item, index }) => {
+                                          renderItem={({item, index}) => {
                                             return (
-                                              <View style={{ gap: 5 }}>
-                                                {index === pollenHeaderIndex && (
+                                              <View style={{gap: 5}}>
+                                                {index ===
+                                                  pollenHeaderIndex && (
                                                   <AppText
                                                     title="Pollen"
                                                     textSize={2}
@@ -1723,7 +1772,8 @@ const Home = ({ navigation }) => {
                                                   />
                                                 )}
 
-                                                {index === sporesHeaderIndex && (
+                                                {index ===
+                                                  sporesHeaderIndex && (
                                                   <AppText
                                                     title="Spores"
                                                     textSize={2}

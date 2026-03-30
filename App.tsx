@@ -54,6 +54,7 @@ import { responsiveWidth } from './src/utils/Responsive_Dimensions';
 import NetInfo from '@react-native-community/netinfo'
 import AppText from './src/components/AppTextComps/AppText';
 import mobileAds from 'react-native-google-mobile-ads';
+import { checkSubscriptionStatus } from './src/redux/Slices/AuthSlice';
 // import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 
 
@@ -107,15 +108,22 @@ const App = () => {
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
-      // dispatch(setInternet(state.isConnected))
-      // console.log("is",state.isConnected)
+      if (!isInternetConnected && state.isConnected) {
+        // Internet restored! Re-check subscription
+        console.log('🌐 Internet restored, refreshing subscription...');
+        store.dispatch(checkSubscriptionStatus());
+      }
       settInterenetConnected(state.isConnected)
-      // setIsConnected(state.isConnected);
     });
 
     return () => {
       unsubscribe();
     };
+  }, [isInternetConnected]);
+
+  // Initial subscription check on mount
+  useEffect(() => {
+    store.dispatch(checkSubscriptionStatus());
   }, []);
 
   // useEffect(() => {

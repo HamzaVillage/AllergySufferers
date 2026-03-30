@@ -77,7 +77,7 @@ import SymtomsSlice from './Slices/SymtomsSlice'
 const persistConfig = {
   key: 'root',
   storage: AsyncStorage,
-  whitelist: ['auth', 'medications','forecast','symtoms'],
+  whitelist: ['auth'],
   blacklist: ['blacklist'],
 };
 
