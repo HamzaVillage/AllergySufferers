@@ -25,8 +25,8 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import AppButton from '../../../../components/AppButton';
 const Notification = ({ navigation }) => {
   const userData = useSelector(state => state?.auth?.user);
-  const expireDate = useSelector(state => state?.auth?.expireDate);
-  const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
+  const isExpired = useSelector(state => state?.auth?.isExpired);
+  const isPremium = !isExpired;
   const allMyCity = useSelector(state => state?.medications?.allMyCity);
   const [allPollens, setALlPollens] = useState([]);
   const [search, setSearch] = useState('');

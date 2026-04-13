@@ -36,8 +36,8 @@ const AddPollens = ({ navigation }) => {
   const [search, setSearch] = useState('');
   const [loader, setLoader] = useState(false);
 
-  const expireDate = useSelector(state => state.auth.expireDate);
-  const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
+  const isExpired = useSelector(state => state.auth.isExpired);
+  const isPremium = !isExpired;
 
   const [PollenLoader, setPollenApiLoader] = useState(false);
   useEffect(() => {

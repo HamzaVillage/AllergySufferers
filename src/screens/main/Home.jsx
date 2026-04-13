@@ -80,10 +80,8 @@ const Home = ({navigation}) => {
   const transactionId = useSelector(state => state?.auth?.transactionId);
   const transactionDate = useSelector(state => state?.auth?.transactionDate);
   const subscriptionExpire = useSelector(state => state?.auth?.expireDate);
-  const expireDate = useSelector(state => state.auth.expireDate);
-
-  // isPremium is true only if expireDate exists AND current date has not passed the expiry date
-  const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
+  const isExpired = useSelector(state => state.auth.isExpired);
+  const isPremium = !isExpired;
 
   // console.log("AllForcast", expireDate, isPremium, subscriptionType, transactionId, transactionDate)
 
@@ -157,7 +155,7 @@ const Home = ({navigation}) => {
         }
       }
     }
-  }, [expireDate]);
+  }, [isExpired]);
   // dispatch(setWatchFreeTut(false))
   // dispatch(clearForaCastSlive(false))
 
@@ -330,7 +328,7 @@ const Home = ({navigation}) => {
 
   useEffect(() => {
     SubscribeSubscription();
-  }, [expireDate]);
+  }, [isExpired]);
 
   const getCurrentLocation = async () => {
     // console.log('----------------------------');

@@ -38,8 +38,8 @@ const Symptom = ({ navigation }) => {
   const sliderRef = useRef(null);
   const dispatch = useDispatch();
 
-  const expireDate = useSelector(state => state.auth.expireDate);
-  const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
+  const isExpired = useSelector(state => state.auth.isExpired);
+  const isPremium = !isExpired;
   const [loader, setLoader] = useState(false);
   const [endDate, setEndDate] = useState(moment().format('YYYY-MM-DD'));
   const [endopen, setEndOpen] = useState(false);

@@ -38,8 +38,8 @@ import { ApiCallWithUserId } from '../../../../global/ApiCall';
 import SubscribeBar from '../../../../components/SubscribeBar';
 const ManagePollens = ({ navigation }) => {
   const userData = useSelector(state => state.auth.user);
-  const expireDate = useSelector(state => state.auth.expireDate);
-  const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
+  const isExpired = useSelector(state => state.auth.isExpired);
+  const isPremium = !isExpired;
   const [myPollens, setMyPollens] = useState([]);
 
   const [Loader, setLoader] = useState(false);

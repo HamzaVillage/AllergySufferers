@@ -12,6 +12,7 @@ import { clearForaCastSlive } from '../../../../redux/Slices/ForecastSlice';
 import { deleteAllData } from '../../../../redux/Slices/MedicationSlice';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { clearAllLocalCaches } from '../../../../global/ClearLocalCaches';
 
 const Account = ({ navigation }) => {
   const [loader, setLoader] = useState()
@@ -61,6 +62,7 @@ const Account = ({ navigation }) => {
           console.log('Google sign out error:', error);
         }
         await AsyncStorage.clear();
+        await clearAllLocalCaches();
 
         setLoader(false)
         dispatch(setLogout())

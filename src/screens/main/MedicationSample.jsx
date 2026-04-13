@@ -41,8 +41,8 @@ const MedicationSample = ({ navigation }) => {
   const dispatch = useDispatch();
   const userData = useSelector(state => state.auth.user);
 
-  const expireDate = useSelector(state => state.auth.expireDate);
-  const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
+  const isExpired = useSelector(state => state.auth.isExpired);
+  const isPremium = !isExpired;
 
   const [allActiveMedicationRedux, setAllActiveMedicationRedux] = useState([]);
   const [allMyCurrentMeds, setAllMyCurrentMeds] = useState([]);

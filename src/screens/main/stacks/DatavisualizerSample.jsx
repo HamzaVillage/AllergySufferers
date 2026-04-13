@@ -14,7 +14,7 @@ import {
   StatusBar,
   TextInput,
 } from 'react-native';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import AppHeader from '../../../components/AppHeader';
 // import {BarChart, LineChart} from 'react-native-chart-kit';
 import AppColors from '../../../utils/AppColors';
@@ -27,7 +27,7 @@ import AppText from '../../../components/AppTextComps/AppText';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import BASE_URL from '../../../utils/BASE_URL';
-import { useDispatch, useSelector } from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import axios from 'axios';
 import moment from 'moment';
 import DatePicker from 'react-native-date-picker';
@@ -41,22 +41,32 @@ import {
 import AppImages from '../../../assets/images/AppImages';
 import SubscribeBar from '../../../components/SubscribeBar';
 import GetAllLocation from '../../../global/GetAllLocation';
-import { saveAllergens, loadAllergens } from '../../../global/AllergenFileCache';
+import {saveAllergens, loadAllergens} from '../../../global/AllergenFileCache';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ApiCallWithUserId } from '../../../global/ApiCall';
-import { saveCurrentMeds, loadCurrentMeds, saveActiveMedications, loadActiveMedications } from '../../../global/MedicationFileCache';
-import { saveCities, loadCities, saveActiveCity, loadActiveCity } from '../../../global/CityFileCache';
-import { useFocusEffect } from '@react-navigation/native';
-import Svg, { Circle, G, Line, Polyline, Rect } from 'react-native-svg';
+import {ApiCallWithUserId} from '../../../global/ApiCall';
+import {
+  saveCurrentMeds,
+  loadCurrentMeds,
+  saveActiveMedications,
+  loadActiveMedications,
+} from '../../../global/MedicationFileCache';
+import {
+  saveCities,
+  loadCities,
+  saveActiveCity,
+  loadActiveCity,
+} from '../../../global/CityFileCache';
+import {useFocusEffect} from '@react-navigation/native';
+import Svg, {Circle, G, Line, Polyline, Rect} from 'react-native-svg';
 import SvgDashLine from '../../../components/SvgDashLine';
 
-const DatavisualizerSample = ({ navigation }) => {
+const DatavisualizerSample = ({navigation}) => {
   const dispatch = useDispatch();
 
   const userData = useSelector(state => state?.auth?.user);
-  const expireDate = useSelector(state => state?.auth?.expireDate);
-  const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
+  const isExpired = useSelector(state => state?.auth?.isExpired);
+  const isPremium = !isExpired;
   const [allActiveMedicationRedux, setAllActiveMedicationRedux] = useState([]);
   const [allMyCurrentMeds, setAllMyCurrentMeds] = useState([]);
   const [AllCities, setAllCities] = useState([]);
@@ -146,7 +156,7 @@ const DatavisualizerSample = ({ navigation }) => {
 
         if (cachedActiveMeds) setAllActiveMedicationRedux(cachedActiveMeds);
         if (cachedCurrentMeds) setAllMyCurrentMeds(cachedCurrentMeds);
-        
+
         let finalCities = cachedCities;
         if (!cachedCities || cachedCities.length === 0) {
           const apiCities = await GetAllLocation(userData?.id);
@@ -159,7 +169,8 @@ const DatavisualizerSample = ({ navigation }) => {
           setAllCities(cachedCities);
         }
 
-        const finalActiveCity = cachedActiveCity || (finalCities ? finalCities[0] : null);
+        const finalActiveCity =
+          cachedActiveCity || (finalCities ? finalCities[0] : null);
         if (finalActiveCity) {
           setActiveCityLocal(finalActiveCity);
           saveActiveCity(finalActiveCity);
@@ -174,7 +185,7 @@ const DatavisualizerSample = ({ navigation }) => {
         // Initial fetch if needed
         const currentMeds = cachedCurrentMeds || [];
         const activeMeds = cachedActiveMeds || [];
-        
+
         if (currentMeds.length > 0) {
           setAllMedicationToFile(currentMeds, activeMeds);
         } else {
@@ -183,8 +194,6 @@ const DatavisualizerSample = ({ navigation }) => {
             getApiDataAndSaveToFile(activeMeds);
           }
         }
-        
-        getDataVisualizer(finalActiveCity);
       };
       loadData();
     }, []),
@@ -214,7 +223,7 @@ const DatavisualizerSample = ({ navigation }) => {
     }
   }, [selecteddate, activeCity]);
 
-  const NewActiveCity = (cities) => {
+  const NewActiveCity = cities => {
     const list = cities || AllCities;
     if (!activeCity && list.length > 0) {
       setActiveCityLocal(list[0]);
@@ -230,7 +239,8 @@ const DatavisualizerSample = ({ navigation }) => {
     if (
       currentMeds.length > 0 ||
       (activeMeds.length > 0 &&
-        moment(activeMeds[activeMeds.length - 1].date).format('YYYY-MM-DD') === currentDate)
+        moment(activeMeds[activeMeds.length - 1].date).format('YYYY-MM-DD') ===
+          currentDate)
     ) {
       return;
     }
@@ -247,7 +257,7 @@ const DatavisualizerSample = ({ navigation }) => {
     }
   };
 
-  const getApiDataAndSaveToFile = async (activeMeds) => {
+  const getApiDataAndSaveToFile = async activeMeds => {
     if (activeMeds.length === 0) {
       setSavingDataLoader(true);
 
@@ -262,7 +272,7 @@ const DatavisualizerSample = ({ navigation }) => {
           new Map(
             getActiveMedicationData.entries.items.map(item => [
               `${item.date}_${item.medication_id || item.id}`,
-              { ...item, id: item.medication_id || item.id }
+              {...item, id: item.medication_id || item.id},
             ]),
           ).values(),
         );
@@ -339,12 +349,12 @@ const DatavisualizerSample = ({ navigation }) => {
     setActiveDate(null);
     setPollenLoader(true);
 
-    console.log("userData", userData)
+    console.log('userData', userData);
     let config = {
       method: 'get',
       maxBodyLength: Infinity,
       url: `${BASE_URL}/allergy_data/v1/user/${userData?.id}/get_all_allergens`,
-      headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache', Expires: '0' },
+      headers: {'Cache-Control': 'no-cache', Pragma: 'no-cache', Expires: '0'},
     };
 
     axios
@@ -535,8 +545,6 @@ const DatavisualizerSample = ({ navigation }) => {
     // const getCity = await AsyncStorage.getItem('isCity');
     // const parseCity = JSON.parse(getCity);
 
-
-
     setPickedCity(AllCities[0]);
 
     // if (getCity) {
@@ -562,33 +570,36 @@ const DatavisualizerSample = ({ navigation }) => {
     const pickLat = city
       ? city?.lat
       : activeCity
-        ? activeCity.lat
-        : AllCities[0]?.lat;
+      ? activeCity.lat
+      : AllCities[0]?.lat;
     const pickLng = city
       ? city?.lng
       : activeCity
-        ? activeCity.lng
-        : AllCities[0]?.lng;
+      ? activeCity.lng
+      : AllCities[0]?.lng;
 
     const config = {
       method: 'post',
       maxBodyLength: Infinity,
-      url: `${BASE_URL}/allergy_data/v1/user/${userData?.id
-        }/data_visualizer?lat=${activeCityLocalState
+      url: `${BASE_URL}/allergy_data/v1/user/${
+        userData?.id
+      }/data_visualizer?lat=${
+        activeCityLocalState
           ? activeCityLocalState?.lat
           : city
-            ? city?.lat
-            : activeCity
-              ? activeCity.lat
-              : AllCities[0]?.lat
-        }&lng=${activeCityLocalState
+          ? city?.lat
+          : activeCity
+          ? activeCity.lat
+          : AllCities[0]?.lat
+      }&lng=${
+        activeCityLocalState
           ? activeCityLocalState?.lng
           : city
-            ? city?.lng
-            : activeCity
-              ? activeCity.lng
-              : AllCities[0]?.lng
-        }&start_date=${dateis}&${allergenParams}`,
+          ? city?.lng
+          : activeCity
+          ? activeCity.lng
+          : AllCities[0]?.lng
+      }&start_date=${dateis}&${allergenParams}`,
       headers: {
         'Cache-Control': 'no-cache',
         Pragma: 'no-cache',
@@ -604,7 +615,7 @@ const DatavisualizerSample = ({ navigation }) => {
         const chartLineData = {};
         Object.keys(apiData).forEach(key => {
           if (key !== 'dates' && key !== 'symptom_level') {
-            chartLineData[key] = apiData[key].map(val => ({ value: val }));
+            chartLineData[key] = apiData[key].map(val => ({value: val}));
           }
         });
 
@@ -858,8 +869,8 @@ const DatavisualizerSample = ({ navigation }) => {
     const medID = item.medication_id || item.id;
     const updated = allActiveMedicationRedux.map(med =>
       (med.medication_id || med.id) === medID && med.date === item.date
-        ? { ...med, units: (parseInt(med.units) || 0) + 1 }
-        : med
+        ? {...med, units: (parseInt(med.units) || 0) + 1}
+        : med,
     );
     setAllActiveMedicationRedux(updated);
     saveActiveMedications(updated);
@@ -869,9 +880,11 @@ const DatavisualizerSample = ({ navigation }) => {
   const removeMedication = async item => {
     const medID = item.medication_id || item.id;
     const updated = allActiveMedicationRedux.map(med =>
-      (med.medication_id || med.id) === medID && med.date === item.date && (parseInt(med.units) || 0) > 0
-        ? { ...med, units: (parseInt(med.units) || 0) - 1 }
-        : med
+      (med.medication_id || med.id) === medID &&
+      med.date === item.date &&
+      (parseInt(med.units) || 0) > 0
+        ? {...med, units: (parseInt(med.units) || 0) - 1}
+        : med,
     );
     setAllActiveMedicationRedux(updated);
     saveActiveMedications(updated);
@@ -916,7 +929,7 @@ const DatavisualizerSample = ({ navigation }) => {
     5: AppImages.Bored,
   };
 
-  const NewPro = [{ value: 0 }, { value: 2 }, { value: 3 }];
+  const NewPro = [{value: 0}, {value: 2}, {value: 3}];
 
   // Chart height in px (same as <Svg height>)
   const chartHeight = 200;
@@ -966,7 +979,7 @@ const DatavisualizerSample = ({ navigation }) => {
   }));
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: AppColors.WHITE }}>
+    <SafeAreaView style={{flex: 1, backgroundColor: AppColors.WHITE}}>
       <ScrollView
         contentContainerStyle={{
           padding: 20,
@@ -1008,7 +1021,7 @@ const DatavisualizerSample = ({ navigation }) => {
                 />
 
                 <TouchableOpacity
-                  style={{ padding: 20 }}
+                  style={{padding: 20}}
                   onPress={() => getSelectedAllergens(activeCity)}>
                   <Ionicons
                     name="reload"
@@ -1040,7 +1053,13 @@ const DatavisualizerSample = ({ navigation }) => {
                 }}>
                 {MedicationnRecord?.length > 0 ? (
                   <View style={{}}>
-                    <View style={{ minHeight: responsiveHeight(30), width: responsiveWidth(100), position: 'absolute', gap: 1.5 }}>
+                    <View
+                      style={{
+                        minHeight: responsiveHeight(30),
+                        width: responsiveWidth(100),
+                        position: 'absolute',
+                        gap: 1.5,
+                      }}>
                       <SvgDashLine />
                       <SvgDashLine />
                       <SvgDashLine />
@@ -1058,13 +1077,12 @@ const DatavisualizerSample = ({ navigation }) => {
                           y2="10"
                           stroke="black"
                           strokeWidth="2"
-
                         />
                       </Svg>
                     </View>
                     <ScrollView
                       contentContainerStyle={{}}
-                      style={{ marginLeft: 10 }}
+                      style={{marginLeft: 10}}
                       horizontal={true}>
                       <View
                         style={{
@@ -1116,7 +1134,7 @@ const DatavisualizerSample = ({ navigation }) => {
                             marginBottom: 20,
                             marginLeft: responsiveWidth(3.5),
                           }}
-                          renderItem={({ item }) => (
+                          renderItem={({item}) => (
                             <View
                               style={{
                                 width: responsiveWidth(29), // fixed slot per day
@@ -1162,9 +1180,13 @@ const DatavisualizerSample = ({ navigation }) => {
                           data={MedicationnRecord?.filter(res => res.label)}
                           contentContainerStyle={{}}
                           horizontal
-                          renderItem={({ item, index }) => {
+                          renderItem={({item, index}) => {
                             return (
-                              <View style={{ width: responsiveWidth(29), alignItems: 'center' }}>
+                              <View
+                                style={{
+                                  width: responsiveWidth(29),
+                                  alignItems: 'center',
+                                }}>
                                 <AppText title={item.label} textSize={2} />
                               </View>
                             );
@@ -1326,7 +1348,10 @@ const DatavisualizerSample = ({ navigation }) => {
                       style={{
                         position: 'absolute',
                         zIndex: 10,
-                        bottom: Platform.OS === 'ios' ? responsiveHeight(3.5) : responsiveHeight(3),
+                        bottom:
+                          Platform.OS === 'ios'
+                            ? responsiveHeight(3.5)
+                            : responsiveHeight(3),
                         left: responsiveWidth(1.9),
                         gap: Platform.OS == 'ios' ? 32 : 30,
                         flexDirection: 'column-reverse',
@@ -1365,8 +1390,8 @@ const DatavisualizerSample = ({ navigation }) => {
                         // paddingVertical: responsiveHeight(1),
                         // justifyContent: 'flex-start',,
                         height: responsiveHeight(30),
-                        top: '21%',
-                        gap: 15,
+                        top: '30%',
+                        gap: 10,
                       }}>
                       <AppText
                         // style={{
@@ -1418,13 +1443,13 @@ const DatavisualizerSample = ({ navigation }) => {
               </View>
             )}
 
-            <View style={{ gap: 20 }}>
+            <View style={{gap: 20}}>
               <View>
                 <AppText title={'Allergens'} textSize={2} textFontWeight />
                 <FlatList
                   data={takingMedications}
                   keyExtractor={item => item?.id?.toString()}
-                  renderItem={({ item, index }) => (
+                  renderItem={({item, index}) => (
                     <View
                       style={{
                         minHeight: responsiveHeight(5),
@@ -1449,7 +1474,7 @@ const DatavisualizerSample = ({ navigation }) => {
                       />
 
                       {loadingItemId == item?.id ? (
-                        <View style={{ paddingRight: 20 }}>
+                        <View style={{paddingRight: 20}}>
                           <ActivityIndicator
                             size={'large'}
                             color={AppColors.WHITE}
@@ -1479,7 +1504,7 @@ const DatavisualizerSample = ({ navigation }) => {
               </View>
 
               {activeCity && (
-                <View style={{ gap: 10 }}>
+                <View style={{gap: 10}}>
                   <AppText title={'City'} textSize={2} textFontWeight />
                   <View
                     style={{
@@ -1500,8 +1525,8 @@ const DatavisualizerSample = ({ navigation }) => {
                         activeCityLocalState
                           ? activeCityLocalState?.city_name
                           : activeCity?.city_name
-                            ? activeCity?.city_name
-                            : AllCities[0]?.city_name
+                          ? activeCity?.city_name
+                          : AllCities[0]?.city_name
                       }
                       textSize={2}
                       textFontWeight
@@ -1588,19 +1613,19 @@ const DatavisualizerSample = ({ navigation }) => {
                   marginTop: 10,
                   paddingVertical: 12,
                 }}
-              // style={{
-              //   height: responsiveHeight(5),
-              //   width: responsiveWidth(90),
-              //   borderWidth: 1,
-              //   borderRadius: 10,
-              //   alignItems: 'center',
-              //   justifyContent: 'center',
-              //   backgroundColor:
-              //     type == 'Add Location'
-              //       ? AppColors.BTNCOLOURS
-              //       : AppColors.WHITE,
-              //   marginTop: 10,
-              // }}
+                // style={{
+                //   height: responsiveHeight(5),
+                //   width: responsiveWidth(90),
+                //   borderWidth: 1,
+                //   borderRadius: 10,
+                //   alignItems: 'center',
+                //   justifyContent: 'center',
+                //   backgroundColor:
+                //     type == 'Add Location'
+                //       ? AppColors.BTNCOLOURS
+                //       : AppColors.WHITE,
+                //   marginTop: 10,
+                // }}
               >
                 <AppText
                   title={'Change Location'}
@@ -1614,7 +1639,7 @@ const DatavisualizerSample = ({ navigation }) => {
             </View>
 
             {pollenLoader && (
-              <View style={{ marginTop: 30 }}>
+              <View style={{marginTop: 30}}>
                 <ActivityIndicator size={'large'} color={AppColors.BLACK} />
               </View>
             )}
@@ -1629,7 +1654,7 @@ const DatavisualizerSample = ({ navigation }) => {
                     marginTop: 20,
                     marginBottom: 20,
                   }}
-                  renderItem={({ item }) => {
+                  renderItem={({item}) => {
                     return (
                       <View
                         style={{
@@ -1703,7 +1728,7 @@ const DatavisualizerSample = ({ navigation }) => {
                     paddingHorizontal: 10,
                     marginBottom: 10,
                     height: responsiveHeight(6),
-                    marginTop: 10
+                    marginTop: 10,
                   }}>
                   <Ionicons
                     name="search"
@@ -1716,7 +1741,6 @@ const DatavisualizerSample = ({ navigation }) => {
                       marginLeft: 10,
                       color: AppColors.BLACK,
                       fontSize: responsiveFontSize(2),
-
                     }}
                     placeholder="Search Allergens..."
                     placeholderTextColor={AppColors.LIGHTGRAY}
@@ -1738,7 +1762,7 @@ const DatavisualizerSample = ({ navigation }) => {
                     ?.sort((a, b) =>
                       a.common_name.localeCompare(b.common_name),
                     )}
-                  renderItem={({ item }) => {
+                  renderItem={({item}) => {
                     return (
                       <TouchableOpacity
                         onPress={() =>
@@ -1767,7 +1791,6 @@ const DatavisualizerSample = ({ navigation }) => {
                           color={AppColors.BTNCOLOURS}
                         />
                         <View>
-
                           <AppText title={item.common_name} textSize={1.5} />
                           <AppText title={item.name} textSize={1.5} />
                         </View>
@@ -1780,7 +1803,7 @@ const DatavisualizerSample = ({ navigation }) => {
               <View>
                 <FlatList
                   data={AllCities}
-                  renderItem={({ item }) => {
+                  renderItem={({item}) => {
                     return (
                       <TouchableOpacity
                         onPress={() => SelectLocation(item)}
@@ -1803,7 +1826,6 @@ const DatavisualizerSample = ({ navigation }) => {
                         />
 
                         <AppText title={item.city_name} textSize={1.5} />
-
                       </TouchableOpacity>
                     );
                   }}
@@ -1812,7 +1834,7 @@ const DatavisualizerSample = ({ navigation }) => {
             )}
           </>
         ) : (
-          <View style={{ justifyContent: 'center', marginTop: 20 }}>
+          <View style={{justifyContent: 'center', marginTop: 20}}>
             <SubscribeBar
               title="Subscribe now to correlate pollen and spore levels with medication and symptoms"
               title2={

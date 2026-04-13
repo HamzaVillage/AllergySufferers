@@ -54,7 +54,6 @@ import { responsiveWidth } from './src/utils/Responsive_Dimensions';
 import NetInfo from '@react-native-community/netinfo'
 import AppText from './src/components/AppTextComps/AppText';
 import mobileAds from 'react-native-google-mobile-ads';
-import { checkSubscriptionStatus } from './src/redux/Slices/AuthSlice';
 // import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 
 
@@ -63,29 +62,29 @@ const App = () => {
 
 
 
-  mobileAds()
-    .initialize()
-    .then(() => {
-      console.log('AdMob initialized');
-    })
+  useEffect(() => {
+    mobileAds()
+      .initialize()
+      .then(() => {
+        console.log('AdMob initialized');
+      });
+  }, []);
+
   useEffect(() => {
     // Create channel on start
     async function setup() {
-      // if (Platform.OS === 'android') {
       await notifee.requestPermission();
       await notifee.createChannel({
         id: 'default',
         name: 'Default Channel',
         importance: 4, // HIGH
       });
-
     }
     setup();
   }, []);
 
   useEffect(() => {
-    const unsubscribe = messaging().onMessage(async (message) => {
-
+    const unsubscribe = messaging().onMessage(async message => {
       if (message?.notification) {
         await notifee.displayNotification({
           title: message.notification.title,
@@ -103,17 +102,13 @@ const App = () => {
     return unsubscribe;
   }, []);
 
-
-
-
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
       if (!isInternetConnected && state.isConnected) {
-        // Internet restored! Re-check subscription
-        console.log('🌐 Internet restored, refreshing subscription...');
-        store.dispatch(checkSubscriptionStatus());
+        // Internet restored!
+        console.log('🌐 Internet restored...');
       }
-      settInterenetConnected(state.isConnected)
+      settInterenetConnected(!!state.isConnected);
     });
 
     return () => {
@@ -123,7 +118,7 @@ const App = () => {
 
   // Initial subscription check on mount
   useEffect(() => {
-    store.dispatch(checkSubscriptionStatus());
+    // Subscription is now handled automatically in Main.jsx restore flow
   }, []);
 
   // useEffect(() => {

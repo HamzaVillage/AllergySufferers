@@ -32,8 +32,8 @@ const AddCity = ({navigation}) => {
   const dispatch = useDispatch();
   const userdata = useSelector(state => state.auth.user);
   const [allMyCity, setAllMyCity] = useState([]);
-  const expireDate = useSelector(state => state.auth.expireDate);
-  const isPremium = expireDate ? new Date() <= new Date(expireDate) : false;
+  const isExpired = useSelector(state => state.auth.isExpired);
+  const isPremium = !isExpired;
   const [detail, setDetil] = useState();
   const [cityLoader, setCityLoader] = useState(false);
 

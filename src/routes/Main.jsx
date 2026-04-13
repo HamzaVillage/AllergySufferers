@@ -1,7 +1,16 @@
-import { View, Text, Image, StyleSheet, Platform, StatusBar, SafeAreaView } from 'react-native';
-import React, { useEffect } from 'react';
-import { createStackNavigator } from '@react-navigation/stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  Platform,
+  StatusBar,
+  SafeAreaView,
+  Alert,
+} from 'react-native';
+import React, {useEffect} from 'react';
+import {createStackNavigator} from '@react-navigation/stack';
+import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 
 import Home from '../screens/main/Home';
 import AppColors from '../utils/AppColors';
@@ -31,26 +40,152 @@ import Notification from '../screens/main/stacks/notification/Notification';
 import ForcastExplaination from '../screens/main/stacks/forcastexplaination/ForcastExplaination';
 import MedicationSample from '../screens/main/MedicationSample';
 import DatavisualizerSample from '../screens/main/stacks/DatavisualizerSample';
-import { responsiveHeight } from '../utils/Responsive_Dimensions';
+import {responsiveHeight} from '../utils/Responsive_Dimensions';
 import AppSubscription from '../screens/main/subscription/AppSubscription';
 import ViewAppGuide from '../screens/main/stacks/Help/ViewAppGuide';
 import ViewFreeAppGuide from '../screens/main/stacks/Help/ViewFreeAppGuide';
-import { getMessaging } from '@react-native-firebase/messaging';
-import { useNavigation } from '@react-navigation/native';
+import {getMessaging} from '@react-native-firebase/messaging';
+import {useNavigation} from '@react-navigation/native';
 import GuideInstructionSubCatogory from '../screens/main/stacks/Help/GuideInstructionSubCatogory';
 import ViewSubGuideInstruction from '../screens/main/stacks/Help/ViewSubGuideInstruction';
-// import { SafeAreaView, useSafeAreaInsets } from "react-SafeAreaViewnative-safe-area-context";
-
+import {useDispatch, useSelector} from 'react-redux';
+import {
+  initConnection,
+  getAvailablePurchases,
+  endConnection,
+} from 'react-native-iap';
+import VerifyRestoreSubscription from '../global/VerifyRestoreSubscription';
+import {setSubscription, setLogout} from '../redux/Slices/AuthSlice';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-
 const Main = () => {
+  const dispatch = useDispatch();
+  const userData = useSelector(state => state.auth.user);
+
+  useEffect(() => {
+    const restorePurchases = async () => {
+      try {
+        console.log('🔄 Checking for available purchases to restore...');
+        await initConnection();
+        const purchases = await getAvailablePurchases();
+
+        if (purchases && purchases.length > 0) {
+          console.log(`📦 Found ${purchases} available purchases`);
+          for (const purchase of purchases) {
+            const payload =
+              Platform.OS === 'android'
+                ? {
+                    platform: 'google',
+                    purchaseToken: purchase.purchaseToken,
+                    productId: purchase.productId,
+                  }
+                : {
+                    platform: 'apple',
+                    signedTransactionInfo: purchase.transactionReceipt,
+                  };
+
+            console.log('payload>>>>>>>>', payload);
+
+            if (userData?.id) {
+              try {
+                const result = await VerifyRestoreSubscription(
+                  userData.id,
+                  payload,
+                );
+                console.log('Verification Result:', result);
+                if (result && (result.status === 'success' || result.attached_to_user)) {
+                  const expiryDate = result.user?.expiry || result.expiry;
+                  dispatch(
+                    setSubscription({
+                      isExpired: false,
+                      expireDate: expiryDate,
+                      SubscriptionType: purchase.productId,
+                      transactionId:
+                        Platform.OS === 'ios'
+                          ? purchase.transactionId
+                          : purchase.purchaseToken,
+                    }),
+                  );
+                  console.log(
+                    '✅ Subscription restored and verified for product:',
+                    purchase.productId,
+                  );
+                } else {
+                  console.log('ℹ️ Subscription verification failed or not attached');
+                }
+              } catch (verifyError) {
+                console.error(
+                  '❌ Verification failed for purchase:',
+                  purchase.productId,
+                  verifyError.message,
+                );
+                
+                const errorData = verifyError.response?.data;
+                if (errorData?.code === 'subscription-owned-by-another-user') {
+                  Alert.alert(
+                    "Subscription Already Linked",
+                    "This Google subscription is already linked to another account. Proceed to link the subscription to the current account which you logged in?",
+                    [
+                      {
+                        text: "Don't proceed",
+                        style: "cancel",
+                        onPress: async () => {
+                          const { clearAllLocalCaches } = require('../global/ClearLocalCaches');
+                          await clearAllLocalCaches();
+                          dispatch(setLogout());
+                        }
+                      },
+                      {
+                        text: "Proceed",
+                        onPress: async () => {
+                          try {
+                            const proceedPayload = { ...payload, type: 'proceed' };
+                            const proceedResult = await VerifyRestoreSubscription(userData.id, proceedPayload);
+                            if (proceedResult && (proceedResult.status === 'success' || proceedResult.attached_to_user)) {
+                              const expiryDate = proceedResult.user?.expiry || proceedResult.expiry;
+                              dispatch(
+                                setSubscription({
+                                  isExpired: false,
+                                  expireDate: expiryDate,
+                                  SubscriptionType: purchase.productId,
+                                  transactionId:
+                                    Platform.OS === 'ios'
+                                      ? purchase.transactionId
+                                      : purchase.purchaseToken,
+                                }),
+                              );
+                              console.log('✅ Subscription restored and verified after proceed.');
+                            }
+                          } catch (proceedError) {
+                            console.error('❌ Verification failed after proceed:', proceedError?.response?.data || proceedError.message);
+                          }
+                        }
+                      }
+                    ]
+                  );
+                }
+              }
+            }
+          }
+        } else {
+          console.log('ℹ️ No available purchases found to restore');
+        }
+      } catch (err) {
+        console.error('❌ Error in automated restorePurchases:', err);
+      }
+    };
+
+    if (userData?.id) {
+      restorePurchases();
+    }
+  }, [userData?.id]);
+
   return (
     <Stack.Navigator
       initialRouteName="Home"
-      screenOptions={{ headerShown: false }}>
+      screenOptions={{headerShown: false}}>
       <Stack.Screen name="Home" component={MyTabs} />
 
       <Stack.Screen name="FeedBack" component={HomeWithSafeArea(FeedBack)} />
@@ -86,9 +221,14 @@ const Main = () => {
       {/* setting screen */}
       <Stack.Screen name="More" component={HomeWithSafeArea(More)} />
       <Stack.Screen name="Account" component={HomeWithSafeArea(Account)} />
-      <Stack.Screen name="ViewAppGuide" component={HomeWithSafeArea(ViewAppGuide)} />
-      <Stack.Screen name="ViewFreeAppGuide" component={HomeWithSafeArea(ViewFreeAppGuide)} />
-
+      <Stack.Screen
+        name="ViewAppGuide"
+        component={HomeWithSafeArea(ViewAppGuide)}
+      />
+      <Stack.Screen
+        name="ViewFreeAppGuide"
+        component={HomeWithSafeArea(ViewFreeAppGuide)}
+      />
 
       <Stack.Screen
         name="HelpScreen"
@@ -126,26 +266,32 @@ const Main = () => {
         component={HomeWithSafeArea(AddMedications)}
       />
       <Stack.Screen name="TipsTrick" component={HomeWithSafeArea(TipsTrick)} />
-      <Stack.Screen name="GuideInstructionSubCatogory" component={HomeWithSafeArea(GuideInstructionSubCatogory)} />
-      <Stack.Screen name="ViewSubGuideInstruction" component={HomeWithSafeArea(ViewSubGuideInstruction)} />
-
-
+      <Stack.Screen
+        name="GuideInstructionSubCatogory"
+        component={HomeWithSafeArea(GuideInstructionSubCatogory)}
+      />
+      <Stack.Screen
+        name="ViewSubGuideInstruction"
+        component={HomeWithSafeArea(ViewSubGuideInstruction)}
+      />
     </Stack.Navigator>
   );
 };
 
 function MyTabs() {
-  const navigationRef = useNavigation()
+  const navigationRef = useNavigation();
   useEffect(() => {
     // When app is in background
 
-    const unsubscribe = getMessaging().onNotificationOpenedApp(remoteMessage => {
-      // console.log("remoteMessage",remoteMessage)
-      navigationRef.reset({
-        index: 0,
-        routes: [{ name: 'Home' }], // Always open Home
-      });
-    });
+    const unsubscribe = getMessaging().onNotificationOpenedApp(
+      remoteMessage => {
+        // console.log("remoteMessage",remoteMessage)
+        navigationRef.reset({
+          index: 0,
+          routes: [{name: 'Home'}], // Always open Home
+        });
+      },
+    );
 
     // // When app is opened from quit state
     // getMessaging()
@@ -178,21 +324,19 @@ function MyTabs() {
           // paddingBottom: insets.bottom + 80 ,
 
           bottom: 0,
-          zIndex: 100
+          zIndex: 100,
         },
-
-
       }}>
       <Tab.Screen
         name="Forecast"
         component={Home}
         options={{
-          tabBarIcon: ({ focused }) => {
+          tabBarIcon: ({focused}) => {
             return (
               <View>
                 <Image
                   source={AppImages.Forcast}
-                  style={{ height: 30, width: 30 }}
+                  style={{height: 30, width: 30}}
                 />
               </View>
             );
@@ -207,7 +351,7 @@ function MyTabs() {
             return (
               <Image
                 source={AppImages.SYMPTOMS}
-                style={{ height: 30, width: 30 }}
+                style={{height: 30, width: 30}}
               />
             );
           },
@@ -236,7 +380,7 @@ function MyTabs() {
             return (
               <Image
                 source={AppImages.Medication}
-                style={{ height: 30, width: 30 }}
+                style={{height: 30, width: 30}}
               />
             );
           },
@@ -251,7 +395,7 @@ function MyTabs() {
             return (
               <Image
                 source={AppImages.visualizer}
-                style={{ height: 30, width: 30 }}
+                style={{height: 30, width: 30}}
               />
             );
           },
@@ -264,7 +408,7 @@ function MyTabs() {
         options={{
           tabBarIcon: () => {
             return (
-              <Image source={AppImages.More} style={{ height: 30, width: 30 }} />
+              <Image source={AppImages.More} style={{height: 30, width: 30}} />
             );
           },
         }}
@@ -276,11 +420,9 @@ function MyTabs() {
 
 // If needed, wrap MyTabs too:
 const HomeWithSafeArea = Component => props => {
-
-
   return (
-    <SafeAreaView style={{ flex: 1 }} >
-      <StatusBar barStyle={"light-content"} />
+    <SafeAreaView style={{flex: 1}}>
+      <StatusBar barStyle={'light-content'} />
       <Component {...props} />
     </SafeAreaView>
   );
@@ -290,7 +432,7 @@ const SettingTabScreen = () => {
   return (
     <Stack.Navigator
       initialRouteName="More"
-      screenOptions={{ headerShown: false }}>
+      screenOptions={{headerShown: false}}>
       <Stack.Screen name="More" component={HomeWithSafeArea(More)} />
       <Stack.Screen name="Account" component={HomeWithSafeArea(Account)} />
       <Stack.Screen
@@ -337,7 +479,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#fff', // or AppColors.BACKGROUND
-    color: AppColors.BLACK
+    color: AppColors.BLACK,
   },
 });
 

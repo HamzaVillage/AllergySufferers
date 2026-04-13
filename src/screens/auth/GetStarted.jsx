@@ -9,7 +9,6 @@ import BASE_URL from '../../utils/BASE_URL';
 import axios from 'axios';
 import { setSubscription } from '../../redux/Slices/AuthSlice';
 import moment from 'moment';
-import CheckSubscription from '../../global/CheckSubscription';
 import { GetCurrentLocation } from '../../global/GetCurrentLocation';
 import { GetCityName } from '../../global/GetCityName';
 import Geocoder from 'react-native-geocoding';
@@ -59,7 +58,6 @@ const GetStarted = ({ navigation }) => {
 
 
   const checkLoginandPremium = async () => {
-
     if (isInternetConnected == false) {
       ShowError("No Internet Connection", 3000)
       return
@@ -67,50 +65,9 @@ const GetStarted = ({ navigation }) => {
 
     hideNavigationBar();
     try {
-
-
       if (userData?.email) {
-
-        setSubLoader(true);
-
-        const checkSub = await CheckSubscription(userData?.id)
-        console.log("checkSub", checkSub, userData?.id, userData?.email)
-        if (checkSub.expiry) {
-
-          dispatch(setSubscription({ isExpired: false, expireDate: checkSub?.expiry }))
-
-
-          if (Platform.OS == "android") {
-            await PermissionsAndroid.request(
-              PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-              {
-                title: 'Allergy Sufferers',
-                message: 'Allergy sufferers want to access your location',
-              },
-            );
-
-          }
-
-          const response = await ApiCallWithUserId('post', 'get_medications_active', userData?.id,)
-
-          // Alert.alert("calling in getStarted")
-
-          if (response?.data?.length > 0) {
-
-
-            dispatch(setAllMedicationFromApi(response?.data))
-          }
-          setSubLoader(false);
-
-          navigation.navigate('Main');
-
-        } else {
-          dispatch(setSubscription({ isExpired: true, expireDate: "", SubscriptionType: "" }))
-          navigation.navigate('Main');
-        }
-
+        navigation.navigate('Main');
       } else {
-
         navigation.navigate('Subscription');
       }
     } catch (error) {
