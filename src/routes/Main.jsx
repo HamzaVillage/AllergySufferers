@@ -112,6 +112,7 @@ const Main = () => {
                     '✅ Subscription restored and verified for product:',
                     purchase.productId,
                   );
+                  break; // Stop checking other receipts if we successfully restored one
                 } else {
                   console.log('ℹ️ Subscription verification failed or not attached');
                 }
@@ -126,7 +127,7 @@ const Main = () => {
                 if (errorData?.code === 'subscription-owned-by-another-user') {
                   Alert.alert(
                     "Subscription Already Linked",
-                    "This Google subscription is already linked to another account. Proceed to link the subscription to the current account which you logged in?",
+                    "This Google / Apple subscription is already linked to another account. Proceed to link the subscription to the current account which you logged in?",
                     [
                       {
                         text: "Don't proceed",
@@ -165,6 +166,7 @@ const Main = () => {
                       }
                     ]
                   );
+                  break; // Prevent multiple popups for subsequent purchases
                 }
               }
             }

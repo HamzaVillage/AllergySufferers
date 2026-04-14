@@ -194,6 +194,8 @@ const DatavisualizerSample = ({navigation}) => {
             getApiDataAndSaveToFile(activeMeds);
           }
         }
+
+        getDataVisualizer(finalActiveCity);
       };
       loadData();
     }, []),
