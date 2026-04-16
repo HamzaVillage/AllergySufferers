@@ -12,10 +12,11 @@ type props = {
   title?: String;
   price?: String;
   type?: String;
+  isAndroid?: boolean;
   subscribeNow?: () => void;
 };
 
-const SubscriptionCard = ({price, title, type, subscribeNow}: props) => {
+const SubscriptionCard = ({price, title, type, isAndroid, subscribeNow}: props) => {
   return (
     <View
       style={{
@@ -23,7 +24,7 @@ const SubscriptionCard = ({price, title, type, subscribeNow}: props) => {
         width: responsiveWidth(90),
         borderRadius: 20,
         padding: 20,
-        gap: 30,
+        gap: 20,
       }}>
       <View>
         <AppText
@@ -50,8 +51,16 @@ const SubscriptionCard = ({price, title, type, subscribeNow}: props) => {
         />
         </View>
 
-
-        
+        {isAndroid && (
+          <View style={{ marginTop: 15, paddingHorizontal: 5 }}>
+            <AppText
+              title={`7-day free trial. After 7 days, your subscription will automatically renew at ${price} per ${type === 'monthly' ? 'month' : 'year'}. Cancel anytime in Google Play Subscriptions to avoid charges.`}
+              textSize={1.4}
+              textColor={AppColors.WHITE}
+              textAlignment={'center'}
+            />
+          </View>
+        )}
       </View>
 
       <AppButton

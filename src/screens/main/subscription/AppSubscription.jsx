@@ -472,6 +472,7 @@ const AppSubscription = ({ navigation }) => {
                   ?.pricingPhaseList[priceObjectIndex - 1];
               return (
                 <SubscriptionCard
+                  isAndroid={true}
                   title={item?.displayName}
                   price={PriceArray?.formattedPrice}
                   type={
