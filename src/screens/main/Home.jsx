@@ -66,9 +66,11 @@ import {saveCities, loadCities} from '../../global/CityFileCache';
 import {BannerAd, BannerAdSize, TestIds} from 'react-native-google-mobile-ads';
 
 const Home = ({navigation}) => {
-  const bannerAdUnitId = __DEV__
-    ? TestIds.BANNER
-    : 'ca-app-pub-8551767929999166/4471222920'; // replace with your real ad id
+  // const bannerAdUnitId = __DEV__
+  //   ? TestIds.BANNER
+  //   : 'ca-app-pub-8551767929999166/4471222920'; // replace with your real ad id
+
+  const bannerAdUnitId = 'ca-app-pub-8551767929999166/4471222920'; // replace with your real ad id
 
   Geocoder.init('AIzaSyD3LZ2CmmJizWJlnW4u3fYb44RJvVuxizc'); // use a valid API key
   const [allForecasts, setAllForecasts] = useState([]);
@@ -206,7 +208,9 @@ const Home = ({navigation}) => {
         setAllForecasts(cachedForecasts);
 
         // Always reload cities from cache (picks up cities added in AddCity)
-        const { loadCities: loadCitiesFromCache } = require('../../global/CityFileCache');
+        const {
+          loadCities: loadCitiesFromCache,
+        } = require('../../global/CityFileCache');
         const cachedCities = await loadCitiesFromCache();
         if (cachedCities && cachedCities.length > 0) {
           setAllCities(cachedCities);
