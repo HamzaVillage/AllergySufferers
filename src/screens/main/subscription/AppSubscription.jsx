@@ -431,7 +431,7 @@ const AppSubscription = ({ navigation }) => {
           />
 
           <AppText
-            title={`- Get 4 day forecasts including today for all pollen and spores in the air`}
+            title={`- Get 7 day forecasts including today for all pollen and spores in the air`}
             textSize={1.8}
             textColor={AppColors.BLACK}
           />
@@ -526,35 +526,46 @@ const AppSubscription = ({ navigation }) => {
         <TouchableOpacity
           onPress={() => NoSubscription()}
           style={{
-            marginTop: 5,
+            marginTop: 20,
+            backgroundColor: AppColors.WHITE,
+            borderWidth: 1,
+            borderColor: AppColors.BLACK,
+            borderRadius: 10,
+            paddingVertical: 12,
+            paddingHorizontal: 20,
+            alignItems: 'center',
+            justifyContent: 'center',
             flexDirection: 'row',
-            alignSelf: 'center',
-            gap: 4,
+            gap: 5,
           }}>
           <AppText
             title={'If you already have a subscription please'}
-            textSize={2}
-            textAlignment={'center'}
+            textSize={1.8}
             textColor={AppColors.BLACK}
           />
           <AppText
             title={'Login'}
-            textSize={2}
-            textAlignment={'center'}
+            textSize={1.8}
             textFontWeight
-            textColor={AppColors.BLACK}
+            textColor={AppColors.BLUE}
           />
         </TouchableOpacity>
 
         <TouchableOpacity
           onPress={() => NoSubscription()}
-          style={{ marginTop: 10 }}>
+          style={{
+            marginTop: 15,
+            backgroundColor: AppColors.BLUE,
+            borderRadius: 10,
+            paddingVertical: 12,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
           <AppText
             title={'Continue without subscription'}
             textSize={2}
-            textAlignment={'center'}
             textFontWeight
-            textColor={AppColors.BLUE}
+            textColor={AppColors.WHITE}
           />
         </TouchableOpacity>
       </View>

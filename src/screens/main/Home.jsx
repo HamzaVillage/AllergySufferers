@@ -70,7 +70,10 @@ const Home = ({navigation}) => {
   //   ? TestIds.BANNER
   //   : 'ca-app-pub-8551767929999166/4471222920'; // replace with your real ad id
 
-  const bannerAdUnitId = 'ca-app-pub-8551767929999166/4471222920'; // replace with your real ad id
+  const bannerAdUnitId = Platform.select({
+    ios: 'ca-app-pub-8551767929999166/4471222920', // Replace with real iOS Banner ID if different
+    android: 'ca-app-pub-8551767929999166/4471222920',
+  });
 
   Geocoder.init('AIzaSyD3LZ2CmmJizWJlnW4u3fYb44RJvVuxizc'); // use a valid API key
   const [allForecasts, setAllForecasts] = useState([]);
@@ -432,6 +435,12 @@ const Home = ({navigation}) => {
     if (a.type !== b.type) {
       return a.type === 'pollen' ? -1 : 1;
     }
+    // Pin "Total" items to the top of their respective type sections
+    const isTotalA = (a.common_name || a.name || '').toLowerCase().includes('total');
+    const isTotalB = (b.common_name || b.name || '').toLowerCase().includes('total');
+    if (isTotalA && !isTotalB) return -1;
+    if (!isTotalA && isTotalB) return 1;
+
     // Then sort by level descending (4 to 1)
     if (b.level !== a.level) {
       return b.level - a.level;
@@ -990,6 +999,11 @@ const Home = ({navigation}) => {
                                     if (a.type !== b.type) {
                                       return a.type === 'pollen' ? -1 : 1;
                                     }
+                                    const isTotalA = (a.common_name || a.name || '').toLowerCase().includes('total');
+                                    const isTotalB = (b.common_name || b.name || '').toLowerCase().includes('total');
+                                    if (isTotalA && !isTotalB) return -1;
+                                    if (!isTotalA && isTotalB) return 1;
+
                                     if (b.level !== a.level) {
                                       return b.level - a.level;
                                     }
@@ -1464,7 +1478,7 @@ const Home = ({navigation}) => {
                                 <SubscribeBar
                                   title="Subscribe now to see all individual pollen and spores in the air today."
                                   title2={
-                                    'Upgrade to a premium subscription today to unlock forecasts for all pollen and spores in the air today and the next 3 days (example birch, grass, ragweed, Cladosporium, Alternaria and 70 more pollen and spore types).'
+                                    'Upgrade to a premium subscription today to unlock forecasts for all pollen and spores in the air today and the next 6 days (example birch, grass, ragweed, Cladosporium, Alternaria and 70 more pollen and spore types).'
                                   }
                                   handlePress={() =>
                                     navigation.navigate('Subscription')
@@ -1486,6 +1500,11 @@ const Home = ({navigation}) => {
                                     if (a.type !== b.type) {
                                       return a.type === 'pollen' ? -1 : 1;
                                     }
+                                    const isTotalA = (a.common_name || a.name || '').toLowerCase().includes('total');
+                                    const isTotalB = (b.common_name || b.name || '').toLowerCase().includes('total');
+                                    if (isTotalA && !isTotalB) return -1;
+                                    if (!isTotalA && isTotalB) return 1;
+
                                     if (b.level !== a.level) {
                                       return b.level - a.level;
                                     }

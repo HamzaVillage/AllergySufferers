@@ -148,8 +148,8 @@ const DatavisualizerSample = ({navigation}) => {
   useFocusEffect(
     useCallback(() => {
       const loadData = async () => {
-        const cachedActiveMeds = await loadActiveMedications();
-        const cachedCurrentMeds = await loadCurrentMeds();
+        let cachedActiveMeds = await loadActiveMedications();
+        let cachedCurrentMeds = await loadCurrentMeds();
         const cachedCities = await loadCities();
         const cachedActiveCity = await loadActiveCity();
         const cachedAllergens = await loadAllergens();
@@ -182,23 +182,50 @@ const DatavisualizerSample = ({navigation}) => {
           getAllAllergens();
         }
 
-        // Initial fetch if needed
-        const currentMeds = cachedCurrentMeds || [];
-        const activeMeds = cachedActiveMeds || [];
-
-        if (currentMeds.length > 0) {
-          setAllMedicationToFile(currentMeds, activeMeds);
-        } else {
-          getMedApiDataAndSaveToFile(currentMeds, activeMeds);
-          if (activeMeds.length === 0) {
-            getApiDataAndSaveToFile(activeMeds);
+        // Fetch medications if missing from cache
+        if (!cachedCurrentMeds || cachedCurrentMeds.length === 0) {
+          const response = await ApiCallWithUserId(
+            'post',
+            'get_medications_active',
+            userData?.id,
+          );
+          if (response?.data?.length > 0) {
+            cachedCurrentMeds = response.data;
+            setAllMyCurrentMeds(cachedCurrentMeds);
+            saveCurrentMeds(cachedCurrentMeds);
           }
+        }
+
+        // Fetch records if missing from cache
+        if (!cachedActiveMeds || cachedActiveMeds.length === 0) {
+          const getActiveMedicationData = await ApiCallWithUserId(
+            'post',
+            'get_medication_records',
+            userData?.id,
+          );
+          if (getActiveMedicationData?.entries?.items?.length > 0) {
+            cachedActiveMeds = Array.from(
+              new Map(
+                getActiveMedicationData.entries.items.map(item => [
+                  `${item.date}_${item.medication_id || item.id}`,
+                  { ...item, id: item.medication_id || item.id }
+                ]),
+              ).values(),
+            );
+            setAllActiveMedicationRedux(cachedActiveMeds);
+            saveActiveMedications(cachedActiveMeds);
+          }
+        }
+
+        // Sync and prepare data
+        if (cachedCurrentMeds && cachedCurrentMeds.length > 0) {
+          await setAllMedicationToFile(cachedCurrentMeds, cachedActiveMeds || []);
         }
 
         getDataVisualizer(finalActiveCity);
       };
       loadData();
-    }, []),
+    }, [userData?.id]),
   );
 
   useFocusEffect(

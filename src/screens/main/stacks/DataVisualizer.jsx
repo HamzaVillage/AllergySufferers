@@ -663,11 +663,24 @@ const DataVisualizer = ({ navigation }) => {
         }}>
         <AppHeader
           heading="Data Visualizer"
-          Rightheading="Today"
+          Rightheading={
+            selecteddate === moment().format('YYYY-MM-DD')
+              ? 'Select Date'
+              : 'Today'
+          }
           subheading="Your Data, Visualized"
           goBack
           selecteddate={selecteddate}
-          setOpen={() => setOpen(true)}
+          setOpen={() => {
+            if (selecteddate !== moment().format('YYYY-MM-DD')) {
+              const today = moment().local().format('YYYY-MM-DD');
+              setDate(new Date());
+              setSelectedDate(today);
+              getMedicationRecords(today);
+            } else {
+              setOpen(true);
+            }
+          }}
         />
 
         {startDate && endDate && (

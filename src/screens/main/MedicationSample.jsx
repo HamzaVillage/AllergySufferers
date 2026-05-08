@@ -90,27 +90,56 @@ const MedicationSample = ({ navigation }) => {
     useCallback(() => {
       const loadData = async () => {
         setLoader(true);
-        const cachedCurrentMeds = await loadCurrentMeds();
-        const cachedActiveMeds = await loadActiveMedications();
+        let currentMeds = await loadCurrentMeds();
+        let activeMeds = await loadActiveMedications();
 
-        if (cachedCurrentMeds) setAllMyCurrentMeds(cachedCurrentMeds);
-        if (cachedActiveMeds) setAllActiveMedicationRedux(cachedActiveMeds);
+        if (currentMeds) setAllMyCurrentMeds(currentMeds);
+        if (activeMeds) setAllActiveMedicationRedux(activeMeds);
 
-        const currentMeds = cachedCurrentMeds || [];
-        const activeMeds = cachedActiveMeds || [];
-
-        if (currentMeds.length > 0) {
-          await setAllMedicationToRedux(currentMeds, activeMeds);
-        } else {
-          await getMedApiDataAndSaveToRedux(currentMeds, activeMeds);
-          if (activeMeds.length === 0) {
-            await getApiDataAndSaveToRedux(activeMeds);
+        // If currentMeds are missing, fetch them from API first
+        if (!currentMeds || currentMeds.length === 0) {
+          const response = await ApiCallWithUserId(
+            'post',
+            'get_medications_active',
+            userData?.id,
+          );
+          if (response?.data?.length > 0) {
+            currentMeds = response.data;
+            setAllMyCurrentMeds(currentMeds);
+            saveCurrentMeds(currentMeds);
           }
         }
+
+        // If activeMeds (records) are missing, fetch them from API
+        if (!activeMeds || activeMeds.length === 0) {
+          const getActiveMedicationData = await ApiCallWithUserId(
+            'post',
+            'get_medication_records',
+            userData?.id,
+          );
+          if (getActiveMedicationData?.entries?.items?.length > 0) {
+            activeMeds = Array.from(
+              new Map(
+                getActiveMedicationData.entries.items.map(item => [
+                  `${item.date}_${item.medication_id || item.id}`,
+                  { ...item, id: item.medication_id || item.id }
+                ]),
+              ).values(),
+            );
+            setAllActiveMedicationRedux(activeMeds);
+            saveActiveMedications(activeMeds);
+          }
+        }
+
+        // Now that we (hopefully) have both, sync them (prepare today's entries)
+        if (currentMeds && currentMeds.length > 0) {
+          await setAllMedicationToRedux(currentMeds, activeMeds || []);
+        }
+        
         setLoader(false);
       };
       loadData();
-    }, []),
+    }, [userData?.id]),
   );
 
   const getMedApiDataAndSaveToRedux = async (currentMeds, activeMeds) => {

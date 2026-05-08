@@ -73,6 +73,10 @@ const App = () => {
   useEffect(() => {
     // Create channel on start
     async function setup() {
+      if (Platform.OS === 'ios') {
+        await messaging().registerDeviceForRemoteMessages();
+        await messaging().requestPermission();
+      }
       await notifee.requestPermission();
       await notifee.createChannel({
         id: 'default',
