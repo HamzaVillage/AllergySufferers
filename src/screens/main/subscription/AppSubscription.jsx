@@ -539,16 +539,16 @@ const AppSubscription = ({ navigation }) => {
             gap: 5,
           }}>
           <AppText
-            title={'If you already have a subscription please'}
+            title={'Login with subscription'}
             textSize={1.8}
             textColor={AppColors.BLACK}
           />
-          <AppText
+          {/* <AppText
             title={'Login'}
             textSize={1.8}
             textFontWeight
             textColor={AppColors.BLUE}
-          />
+          /> */}
         </TouchableOpacity>
 
         <TouchableOpacity

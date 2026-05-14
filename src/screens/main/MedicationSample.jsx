@@ -327,12 +327,10 @@ const MedicationSample = ({ navigation }) => {
       setActiveDate(new Date(activeDateStr));
 
       const activeDateMoment = moment(activeDateStr, 'YYYY-MM-DD').startOf('day');
-      const baseDateMoment = moment(
-        selectedDate || new Date(),
-        'YYYY-MM-DD',
-      ).startOf('day');
+      // The slider always ends at Today
+      const todayMoment = moment().local().startOf('day');
 
-      const diffInDays = baseDateMoment.diff(activeDateMoment, 'days');
+      const diffInDays = todayMoment.diff(activeDateMoment, 'days');
       const numberOfWeeks = Math.ceil((diffInDays + 1) / 7);
 
       const slides = [];
@@ -347,8 +345,8 @@ const MedicationSample = ({ navigation }) => {
       });
 
       for (let i = 0; i < numberOfWeeks; i++) {
-        let end = moment(baseDateMoment).subtract(i * 7, 'days');
-        let start = moment(baseDateMoment).subtract(i * 7 + 6, 'days');
+        let end = moment(todayMoment).subtract(i * 7, 'days');
+        let start = moment(todayMoment).subtract(i * 7 + 6, 'days');
 
         if (start.isBefore(activeDateMoment)) {
           start = activeDateMoment.clone();
@@ -386,7 +384,26 @@ const MedicationSample = ({ navigation }) => {
         });
       }
 
-      setCurrentIndex(slides.length - 1);
+      // Find the index of the slide that contains the selected date
+      const selectedDateMoment = moment(selectedDate || new Date(), 'YYYY-MM-DD').startOf('day');
+      const foundIndex = slides.findIndex(slide => {
+        const [startStr, endStr] = slide.title.split(' - ');
+        if (!endStr) return moment(startStr, 'DD MMM').isSame(selectedDateMoment, 'day');
+        
+        // Use the year from today for parsing
+        const currentYear = moment().year();
+        const slideStart = moment(`${startStr} ${currentYear}`, 'DD MMM YYYY').startOf('day');
+        const slideEnd = moment(`${endStr} ${currentYear}`, 'DD MMM YYYY').endOf('day');
+        
+        return selectedDateMoment.isSameOrAfter(slideStart) && selectedDateMoment.isSameOrBefore(slideEnd);
+      });
+
+      if (foundIndex !== -1) {
+        setCurrentIndex(foundIndex);
+      } else {
+        setCurrentIndex(slides.length - 1);
+      }
+      
       setMedicationnRecord(slides);
       setMedicationLoader(false);
     } catch (error) {
@@ -807,10 +824,23 @@ const MedicationSample = ({ navigation }) => {
       <View style={{ padding: 20, backgroundColor: AppColors.WHITE, flex: 1 }}>
         <AppHeader
           heading="Medication"
-          Rightheading="Today"
+          Rightheading={
+            selecteddate === moment().format('YYYY-MM-DD')
+              ? 'Select Date'
+              : 'Today'
+          }
           subheading="Tracker"
           selecteddate={selecteddate}
-          setOpen={() => setOpen(true)}
+          setOpen={() => {
+            if (selecteddate !== moment().format('YYYY-MM-DD')) {
+              const today = moment().local().format('YYYY-MM-DD');
+              setDate(new Date());
+              setSelectedDate(today);
+              generateMedicationSlides(today, allActiveMedicationRedux);
+            } else {
+              setOpen(true);
+            }
+          }}
         />
 
         <DatePicker
@@ -831,7 +861,7 @@ const MedicationSample = ({ navigation }) => {
             const picked = moment(selectedDate).startOf('day');
             const formattedDate = picked.format('YYYY-MM-DD');
             setSelectedDate(formattedDate);
-            // generateMedicationSlides(formattedDate);
+            generateMedicationSlides(formattedDate, allActiveMedicationRedux);
           }}
           onCancel={() => {
             setOpen(false);

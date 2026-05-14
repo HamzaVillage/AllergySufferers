@@ -176,11 +176,19 @@ const Symptom = ({ navigation }) => {
   const generateGraphSlides = async (selectedDate, currentSlidesProp, forceFetch = false) => {
     const currentSlides = currentSlidesProp || graphSlides;
 
-    if (currentSlides?.length > 0 && !forceFetch) {
-      const lastName = currentSlides?.at(-1)?.chartData?.labels?.at(-1);
-      const currentDate = moment(new Date()).local().format('D');
+    // Use Today as the end reference for all slides
+    const referenceDate = moment().local();
+    const selectedDateMoment = moment(selectedDate || new Date()).local();
+    
+    // Calculate how many weeks we need to reach the selected date from Today
+    const diffInDays = referenceDate.diff(selectedDateMoment, 'days');
+    const numWeeks = Math.max(3, Math.ceil((diffInDays + 1) / 7));
 
-      if (lastName === currentDate) {
+    if (currentSlides?.length >= numWeeks && !forceFetch) {
+      const lastLabel = currentSlides?.at(-1)?.chartData?.labels?.at(-1);
+      const todayDay = referenceDate.format('D');
+
+      if (lastLabel === todayDay) {
         setLoader(false);
         return;
       }
@@ -188,62 +196,60 @@ const Symptom = ({ navigation }) => {
 
     setLoader(true);
     const slides = [];
-    const today = moment(selectedDate ? selectedDate : new Date());
 
-    for (let i = 0; i < 3; i++) {
-      const end = moment(today)
+    for (let i = 0; i < numWeeks; i++) {
+      const end = moment(referenceDate)
         .subtract(i * 7, 'days')
         .format('YYYY-MM-DD');
-      const start = moment(today)
+      const start = moment(referenceDate)
         .subtract(i * 7 + 6, 'days')
         .format('YYYY-MM-DD');
 
-      const response = await axios.post(
-        `${BASE_URL}/allergy_data/v1/user/${userData?.id}/get_symptom_records`,
-        JSON.stringify({
-          start_date: start,
-          end_date: end,
-        }),
-        {
-          headers: {
-            'Content-Type': 'application/json',
+      try {
+        const response = await axios.post(
+          `${BASE_URL}/allergy_data/v1/user/${userData?.id}/get_symptom_records`,
+          JSON.stringify({
+            start_date: start,
+            end_date: end,
+          }),
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
           },
-        },
-      );
+        );
 
-      const data = response?.data?.symptoms || [];
+        const data = response?.data?.symptoms || [];
 
-      const labels = data.map(item =>
-        moment(item.date, 'MMM, DD YYYY').format('D'),
-      );
+        const labels = data.map(item =>
+          moment(item.date, 'MMM, DD YYYY').format('D'),
+        );
 
-      const values = data.map(item => parseInt(item.symptom_level));
+        const values = data.map(item => parseInt(item.symptom_level));
 
-      const chartData = {
-        labels: labels,
-        datasets: [
-          { data: values },
-          { data: [1], withDots: false },
-          { data: [5], withDots: false },
-        ],
-      };
+        const chartData = {
+          labels: labels,
+          datasets: [
+            { data: values },
+            { data: [1], withDots: false },
+            { data: [5], withDots: false },
+          ],
+        };
 
-      slides.unshift({
-        key: `${i}`,
-        title: `${moment(start).format('DD MMMM')} - ${moment(end).format(
-          'DD MMMM',
-        )}`,
-        chartData,
-      });
+        slides.unshift({
+          key: `${i}`,
+          title: `${moment(start).format('DD MMMM')} - ${moment(end).format(
+            'DD MMMM',
+          )}`,
+          chartData,
+        });
+      } catch (error) {
+        console.log("Error fetching symptom records for week:", start, end, error);
+      }
     }
-
-    const toDayDate = moment(new Date()).local().format('D');
-    const selectedDateCopy = moment(selectedDate).local().format('D');
 
     setGraphSlides(slides);
     await saveSymtoms(slides);
-
-    setGraphSlides(slides);
     setLoader(false);
   };
 
@@ -292,10 +298,24 @@ const Symptom = ({ navigation }) => {
         <View style={{ paddingHorizontal: 20 }}>
           <AppHeader
             heading="Symptom"
-            Rightheading="Today"
+            Rightheading={
+              selecteddate === moment().format('YYYY-MM-DD')
+                ? 'Select Date'
+                : 'Today'
+            }
             subheading="Tracker"
             selecteddate={selecteddate}
-            setOpen={() => setOpen(!open)}
+            setOpen={() => {
+              if (selecteddate !== moment().format('YYYY-MM-DD')) {
+                const today = moment().local().format('YYYY-MM-DD');
+                setDate(new Date());
+                setSelectedDate(today);
+                generateGraphSlides(today);
+                scrollToDateSlide(moment(today).format('D'));
+              } else {
+                setOpen(true);
+              }
+            }}
           />
         </View>
         {
@@ -307,16 +327,16 @@ const Symptom = ({ navigation }) => {
           date={date}
           mode="date"
           maximumDate={new Date(moment().local())}
-          onConfirm={selectedDate => {
+          onConfirm={async selectedDate => {
             setDate(selectedDate);
             setOpen(false);
-            const today = moment().startOf('day');
             const picked = moment(selectedDate).startOf('day');
             const formattedDate = picked.format('YYYY-MM-DD');
             setSelectedDate(formattedDate);
-            scrollToDateSlide(moment(formattedDate).format('D'))
-            // getSymtomsData(formattedDate);
-            // generateGraphSlides(formattedDate);
+            
+            // Generate slides if the date is not in current slides
+            await generateGraphSlides(formattedDate);
+            scrollToDateSlide(moment(formattedDate).format('D'));
           }}
           onCancel={() => {
             setOpen(false);
