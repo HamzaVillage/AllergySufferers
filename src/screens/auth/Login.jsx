@@ -85,6 +85,8 @@ const Login = ({ navigation }) => {
       // const token = await messaging().getToken();
       const token = await getToken(getMessaging());
 
+      console.log("token", token)
+
       dispatch(setLoader(true));
       let data = new FormData();
       data.append('email', email);
