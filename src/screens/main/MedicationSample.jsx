@@ -135,7 +135,7 @@ const MedicationSample = ({ navigation }) => {
         if (currentMeds && currentMeds.length > 0) {
           await setAllMedicationToRedux(currentMeds, activeMeds || []);
         }
-        
+
         setLoader(false);
       };
       loadData();
@@ -389,12 +389,12 @@ const MedicationSample = ({ navigation }) => {
       const foundIndex = slides.findIndex(slide => {
         const [startStr, endStr] = slide.title.split(' - ');
         if (!endStr) return moment(startStr, 'DD MMM').isSame(selectedDateMoment, 'day');
-        
+
         // Use the year from today for parsing
         const currentYear = moment().year();
         const slideStart = moment(`${startStr} ${currentYear}`, 'DD MMM YYYY').startOf('day');
         const slideEnd = moment(`${endStr} ${currentYear}`, 'DD MMM YYYY').endOf('day');
-        
+
         return selectedDateMoment.isSameOrAfter(slideStart) && selectedDateMoment.isSameOrBefore(slideEnd);
       });
 
@@ -403,7 +403,7 @@ const MedicationSample = ({ navigation }) => {
       } else {
         setCurrentIndex(slides.length - 1);
       }
-      
+
       setMedicationnRecord(slides);
       setMedicationLoader(false);
     } catch (error) {

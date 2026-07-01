@@ -247,21 +247,26 @@ const AuthSlice = createSlice({
       state.loader = action.payload;
     },
     setSubscription: (state, action) => {
-      state.isExpired = action.payload.isExpired;
-      state.expireDate = action.payload.expireDate;
+      const expireDate = action.payload.expireDate;
+      const isExpired = expireDate
+        ? moment(expireDate).isBefore(moment(), 'day')
+        : (action.payload.isExpired !== undefined ? action.payload.isExpired : true);
+
+      state.isExpired = isExpired;
+      state.expireDate = expireDate;
       state.SubscriptionType = action.payload.SubscriptionType;
       state.transactionId = action.payload.transactionId;
 
       // Also update the user object if it exists to keep in sync
       if (state.user) {
-        state.user.is_premium = !action.payload.isExpired;
-        state.user.expiry = action.payload.expireDate;
+        state.user.is_premium = !isExpired;
+        state.user.expiry = expireDate;
       }
       
       // Save to cache whenever subscription is set manually (e.g. from AppSubscription)
       saveSubscriptionCache({
-        isExpired: action.payload.isExpired,
-        expireDate: action.payload.expireDate,
+        isExpired: isExpired,
+        expireDate: expireDate,
         SubscriptionType: action.payload.SubscriptionType,
         transactionId: action.payload.transactionId,
       });
@@ -289,7 +294,10 @@ const AuthSlice = createSlice({
 
         if (action.payload.expiry) {
           state.expireDate = action.payload.expiry;
-          state.isExpired = false;
+          state.isExpired = moment(action.payload.expiry).isBefore(moment(), 'day');
+        } else {
+          state.isExpired = true;
+          state.expireDate = null;
         }
 
       })

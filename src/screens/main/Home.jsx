@@ -11,7 +11,7 @@ import {
   Alert,
   StyleSheet,
 } from 'react-native';
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import LinearGradient from 'react-native-linear-gradient';
 import {
   responsiveFontSize,
@@ -27,7 +27,7 @@ import AppImages from '../../assets/images/AppImages';
 import SpeedoMeter from '../../components/SpeedoMeter';
 import SelectionButton from '../../components/SelectionButton';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import {useDispatch, useSelector} from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import BASE_URL from '../../utils/BASE_URL';
 import DatePicker from 'react-native-date-picker';
@@ -39,9 +39,9 @@ import AppButton from '../../components/AppButton';
 import PointPollenSpores from '../../components/PointPollenSpores';
 // import AddCityApi from '../../global/AddCityApi';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import {useFocusEffect, useNavigation} from '@react-navigation/native';
-import {GetCurrentLocation} from '../../global/GetCurrentLocation';
-import {GetCityName} from '../../global/GetCityName';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { GetCurrentLocation } from '../../global/GetCurrentLocation';
+import { GetCityName } from '../../global/GetCityName';
 import {
   setAddCity,
   setAllCityFromApi,
@@ -60,12 +60,12 @@ import {
   setWatchPaidTut,
 } from '../../redux/Slices/AuthSlice';
 import SubscribeNow from '../../global/SubscribeNow';
-import {ApiCallWithUserId} from '../../global/ApiCall';
-import {saveForecast, loadAllForecasts} from '../../global/ForecastFileCache';
-import {saveCities, loadCities} from '../../global/CityFileCache';
-import {BannerAd, BannerAdSize, TestIds} from 'react-native-google-mobile-ads';
+import { ApiCallWithUserId } from '../../global/ApiCall';
+import { saveForecast, loadAllForecasts } from '../../global/ForecastFileCache';
+import { saveCities, loadCities } from '../../global/CityFileCache';
+import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 
-const Home = ({navigation}) => {
+const Home = ({ navigation }) => {
   // const bannerAdUnitId = __DEV__
   //   ? TestIds.BANNER
   //   : 'ca-app-pub-8551767929999166/4471222920'; // replace with your real ad id
@@ -85,8 +85,11 @@ const Home = ({navigation}) => {
   const transactionId = useSelector(state => state?.auth?.transactionId);
   const transactionDate = useSelector(state => state?.auth?.transactionDate);
   const subscriptionExpire = useSelector(state => state?.auth?.expireDate);
+  const data = useSelector(state => state?.auth);
   const isExpired = useSelector(state => state.auth.isExpired);
   const isPremium = !isExpired;
+
+  console.log("isExpired", data,)
 
   // console.log("AllForcast", expireDate, isPremium, subscriptionType, transactionId, transactionDate)
 
@@ -171,6 +174,7 @@ const Home = ({navigation}) => {
 
       if (userData) {
         getActivePollens();
+        checkPremiumStatus();
 
         // getAllCities();
         // getCurrentLocation();
@@ -180,6 +184,18 @@ const Home = ({navigation}) => {
 
     return nav;
   }, [navigation, hasFetchedOnce, userData]);
+
+  const checkPremiumStatus = async () => {
+    if (!userData?.id) return;
+    try {
+      console.log('🔄 Calling check_premium API for user:', userData.id);
+      const response = await axios.post('https://www.allergysufferers.ca/wp-json/allergy_data/v1/163509/check_premium');
+      console.log('🔍 check_premium response:', response.data);
+    } catch (error) {
+      console.log("base url", `${BASE_URL}/allergy_data/v1/user/${userData.id}/check_premium`)
+      console.error('❌ check_premium error:', error.response?.data || error.message);
+    }
+  };
 
   const getActivePollens = () => {
     setActiveLoader(true);
@@ -460,12 +476,12 @@ const Home = ({navigation}) => {
       // console.log('foreaching', item, index);
 
       if (item.type === 'pollen' && !pollenHeaderAdded) {
-        Headings.push({type: 'header', title: 'Pollen', index: index});
+        Headings.push({ type: 'header', title: 'Pollen', index: index });
         pollenHeaderAdded = true;
       }
 
       if (item.type === 'spore' && !sporesHeaderAdded) {
-        Headings.push({type: 'header', title: 'Spores', index: index});
+        Headings.push({ type: 'header', title: 'Spores', index: index });
         sporesHeaderAdded = true;
       }
     });
@@ -505,6 +521,8 @@ const Home = ({navigation}) => {
       type: 'pollen',
     },
   ];
+
+  console.log("freeData", freeData, todayPollensData)
 
   const setForcastLocal = isExistInArray => {
     try {
@@ -594,7 +612,7 @@ const Home = ({navigation}) => {
         ) : (
           <>
             {AllCities.length > 0 ? (
-              <View style={{flex: 1}}>
+              <View style={{ flex: 1 }}>
                 <ScrollView
                   nestedScrollEnabled
                   contentContainerStyle={{
@@ -659,7 +677,7 @@ const Home = ({navigation}) => {
                       showDoneButton={false}
                       showNextButton={false}
                       onSlideChange={index => getPollensData(sortCities, index)}
-                      renderItem={({item, index}) => {
+                      renderItem={({ item, index }) => {
                         return (
                           <>
                             <View
@@ -668,20 +686,20 @@ const Home = ({navigation}) => {
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
                               }}>
-                              <View style={{flexDirection: 'row', gap: 5}}>
+                              <View style={{ flexDirection: 'row', gap: 5 }}>
                                 {item?.currentLocation ? (
                                   <FontAwesome6
                                     name={'location-dot'}
                                     size={responsiveFontSize(2)}
                                     color={AppColors.BLUE}
-                                    style={{marginTop: 6}}
+                                    style={{ marginTop: 6 }}
                                   />
                                 ) : (
                                   <FontAwesome
                                     name={'map'}
                                     size={responsiveFontSize(2)}
                                     color={AppColors.BLUE}
-                                    style={{marginTop: 6}}
+                                    style={{ marginTop: 6 }}
                                   />
                                 )}
                                 <View>
@@ -749,7 +767,7 @@ const Home = ({navigation}) => {
                     />
                   )}
 
-                  <View style={{flexDirection: 'row', gap: 5}}>
+                  <View style={{ flexDirection: 'row', gap: 5 }}>
                     {activeLoader == true ? (
                       <View
                         style={{
@@ -761,11 +779,11 @@ const Home = ({navigation}) => {
                         <ActivityIndicator
                           size={'large'}
                           color={AppColors.BLACK}
-                          style={{alignSelf: 'center'}}
+                          style={{ alignSelf: 'center' }}
                         />
                       </View>
                     ) : (
-                      <View style={{flexDirection: 'row'}}>
+                      <View style={{ flexDirection: 'row' }}>
                         {/* {console.log('activeDataForDials', activeDataForDials)} */}
                         {isPremium ? (
                           <>
@@ -778,7 +796,7 @@ const Home = ({navigation}) => {
                                   gap: 20,
                                   flexDirection: 'row',
                                 }}
-                                renderItem={({item}) => {
+                                renderItem={({ item }) => {
                                   const activeDataForDials =
                                     todayPollensData?.current;
                                   console.log(
@@ -791,11 +809,11 @@ const Home = ({navigation}) => {
                                   ).findIndex(
                                     p =>
                                       p?.scientific_name?.toLowerCase() ===
-                                        item.name?.toLowerCase() ||
+                                      item.name?.toLowerCase() ||
                                       p.name?.toLowerCase() ===
-                                        item.common_name?.toLowerCase() ||
+                                      item.common_name?.toLowerCase() ||
                                       p?.scientific_name?.toLowerCase() ===
-                                        item?.common_name?.toLowerCase() ||
+                                      item?.common_name?.toLowerCase() ||
                                       (item.common_name
                                         ?.toLowerCase()
                                         .includes('cedar') &&
@@ -822,7 +840,7 @@ const Home = ({navigation}) => {
                                   const todayPollenInAir = activeDataForDials;
 
                                   return (
-                                    <View style={{gap: 10}}>
+                                    <View style={{ gap: 10 }}>
                                       <AppText
                                         title={item.common_name}
                                         textAlignment={'center'}
@@ -843,14 +861,14 @@ const Home = ({navigation}) => {
                                             ? 'Low'
                                             : todayPollenInAir[index]?.level ==
                                               2
-                                            ? 'Moderate'
-                                            : todayPollenInAir[index]?.level ==
-                                              3
-                                            ? 'High'
-                                            : todayPollenInAir[index]?.level ==
-                                              4
-                                            ? 'Very High'
-                                            : 'None'
+                                              ? 'Moderate'
+                                              : todayPollenInAir[index]?.level ==
+                                                3
+                                                ? 'High'
+                                                : todayPollenInAir[index]?.level ==
+                                                  4
+                                                  ? 'Very High'
+                                                  : 'None'
                                         }
                                         isPollenorSpores={
                                           todayPollenInAir[index]?.type
@@ -870,9 +888,9 @@ const Home = ({navigation}) => {
                                   gap: 20,
                                   flexDirection: 'row',
                                 }}
-                                renderItem={({item}) => {
+                                renderItem={({ item }) => {
                                   return (
-                                    <View style={{gap: 10}}>
+                                    <View style={{ gap: 10 }}>
                                       <AppText
                                         title={item.name}
                                         textAlignment={'center'}
@@ -900,9 +918,9 @@ const Home = ({navigation}) => {
                             <FlatList
                               data={freeData}
                               horizontal
-                              renderItem={({item}) => {
+                              renderItem={({ item }) => {
                                 return (
-                                  <View style={{gap: 10}}>
+                                  <View style={{ gap: 10 }}>
                                     <AppText
                                       title={item.name}
                                       textAlignment={'center'}
@@ -922,12 +940,12 @@ const Home = ({navigation}) => {
                                         item.value == 1
                                           ? 'Low'
                                           : item.value == 2
-                                          ? 'Moderate'
-                                          : item.value == 3
-                                          ? 'High'
-                                          : item.value == 4
-                                          ? 'Very High'
-                                          : 'None'
+                                            ? 'Moderate'
+                                            : item.value == 3
+                                              ? 'High'
+                                              : item.value == 4
+                                                ? 'Very High'
+                                                : 'None'
                                       }
                                       isPollenorSpores={item.type}
                                       TempreaturePriorityFontSize={1.6}
@@ -943,7 +961,7 @@ const Home = ({navigation}) => {
                   </View>
 
                   <View
-                    style={{flexDirection: 'row', gap: 10, marginBottom: 20}}>
+                    style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
                     <SelectionButton
                       title="Past"
                       setSelected={() => setSelected('Past')}
@@ -991,9 +1009,9 @@ const Home = ({navigation}) => {
                           {isPremium ? (
                             <FlatList
                               data={ispastArray}
-                              contentContainerStyle={{paddingTop: 100}}
+                              contentContainerStyle={{ paddingTop: 100 }}
                               inverted
-                              renderItem={({item, index}) => {
+                              renderItem={({ item, index }) => {
                                 const pastPollenAndSpores = item?.current?.sort(
                                   (a, b) => {
                                     if (a.type !== b.type) {
@@ -1286,9 +1304,9 @@ const Home = ({navigation}) => {
                                         const indexes = item.current.findIndex(
                                           active =>
                                             active.scientific_name?.toLowerCase() ===
-                                              newItem.name?.toLowerCase() ||
+                                            newItem.name?.toLowerCase() ||
                                             active.name?.toLowerCase() ===
-                                              newItem.common_name?.toLowerCase() ||
+                                            newItem.common_name?.toLowerCase() ||
                                             (newItem.common_name
                                               ?.toLowerCase()
                                               .includes('cedar') &&
@@ -1338,18 +1356,18 @@ const Home = ({navigation}) => {
                                               imageTop={-10}
                                               TextBottom={
                                                 item?.current[indexes]?.level ==
-                                                1
+                                                  1
                                                   ? 'Low'
                                                   : item?.current[indexes]
-                                                      ?.level == 2
-                                                  ? 'Moderate'
-                                                  : item?.current[indexes]
+                                                    ?.level == 2
+                                                    ? 'Moderate'
+                                                    : item?.current[indexes]
                                                       ?.level == 3
-                                                  ? 'High'
-                                                  : item?.current[indexes]
-                                                      ?.level == 4
-                                                  ? 'Very High'
-                                                  : 'None'
+                                                      ? 'High'
+                                                      : item?.current[indexes]
+                                                        ?.level == 4
+                                                        ? 'Very High'
+                                                        : 'None'
                                               }
                                               isPollenorSpores={
                                                 item?.current[indexes]?.type
@@ -1362,30 +1380,30 @@ const Home = ({navigation}) => {
                                     </ScrollView>
 
                                     {expandedFutureKey === item.key && (
-                                      <View style={{marginTop: 20}}>
+                                      <View style={{ marginTop: 20 }}>
                                         <FlatList
                                           data={pastPollenAndSpores}
-                                          renderItem={({item, index}) => {
+                                          renderItem={({ item, index }) => {
                                             return (
-                                              <View style={{gap: 5}}>
+                                              <View style={{ gap: 5 }}>
                                                 {index ===
                                                   pastpollenHeaderIndex && (
-                                                  <AppText
-                                                    title="Pollen"
-                                                    textSize={2}
-                                                    textFontWeight
-                                                  />
-                                                )}
+                                                    <AppText
+                                                      title="Pollen"
+                                                      textSize={2}
+                                                      textFontWeight
+                                                    />
+                                                  )}
 
                                                 {index ===
                                                   sporesHeaderIndex && (
-                                                  <AppText
-                                                    title="Spores"
-                                                    textSize={2}
-                                                    marginTop={2}
-                                                    textFontWeight
-                                                  />
-                                                )}
+                                                    <AppText
+                                                      title="Spores"
+                                                      textSize={2}
+                                                      marginTop={2}
+                                                      textFontWeight
+                                                    />
+                                                  )}
 
                                                 <PointPollenSpores
                                                   PollenSporesArr={
@@ -1430,8 +1448,8 @@ const Home = ({navigation}) => {
                           {isPremium ? (
                             <FlatList
                               data={sortedPollenData}
-                              contentContainerStyle={{paddingBottom: 50}}
-                              renderItem={({item, index}) => {
+                              contentContainerStyle={{ paddingBottom: 50 }}
+                              renderItem={({ item, index }) => {
                                 // console.log('setting data ===>',sortedPollenData)
                                 const pollenHeaderIndex = settingData.find(
                                   h => h.title === 'Pollen',
@@ -1441,7 +1459,7 @@ const Home = ({navigation}) => {
                                 )?.index;
 
                                 return (
-                                  <View style={{gap: 8}}>
+                                  <View style={{ gap: 8 }}>
                                     {index === pollenHeaderIndex && (
                                       <AppText
                                         title="Pollen"
@@ -1493,8 +1511,8 @@ const Home = ({navigation}) => {
                           {isfutureArray?.length > 0 && (
                             <FlatList
                               data={isfutureArray}
-                              contentContainerStyle={{paddingBottom: 50}}
-                              renderItem={({item, index}) => {
+                              contentContainerStyle={{ paddingBottom: 50 }}
+                              renderItem={({ item, index }) => {
                                 const futurePollenAndSpores =
                                   item?.current?.sort((a, b) => {
                                     if (a.type !== b.type) {
@@ -1656,9 +1674,9 @@ const Home = ({navigation}) => {
                                               item.current.findIndex(
                                                 active =>
                                                   active.scientific_name?.toLowerCase() ===
-                                                    newItem.name?.toLowerCase() ||
+                                                  newItem.name?.toLowerCase() ||
                                                   active.name?.toLowerCase() ===
-                                                    newItem.common_name?.toLowerCase() ||
+                                                  newItem.common_name?.toLowerCase() ||
                                                   (newItem.common_name
                                                     ?.toLowerCase()
                                                     .includes('cedar') &&
@@ -1711,15 +1729,15 @@ const Home = ({navigation}) => {
                                                       ?.level == 1
                                                       ? 'Low'
                                                       : item?.current[indexes]
-                                                          ?.level == 2
-                                                      ? 'Moderate'
-                                                      : item?.current[indexes]
+                                                        ?.level == 2
+                                                        ? 'Moderate'
+                                                        : item?.current[indexes]
                                                           ?.level == 3
-                                                      ? 'High'
-                                                      : item?.current[indexes]
-                                                          ?.level == 4
-                                                      ? 'Very High'
-                                                      : 'None'
+                                                          ? 'High'
+                                                          : item?.current[indexes]
+                                                            ?.level == 4
+                                                            ? 'Very High'
+                                                            : 'None'
                                                   }
                                                   isPollenorSpores={
                                                     item?.current[indexes]?.type
@@ -1736,7 +1754,7 @@ const Home = ({navigation}) => {
                                         <>
                                           {FuturefreeData.map(newItem => {
                                             return (
-                                              <View style={{gap: 10}}>
+                                              <View style={{ gap: 10 }}>
                                                 <AppText
                                                   title={newItem?.name}
                                                   textAlignment={'center'}
@@ -1756,12 +1774,12 @@ const Home = ({navigation}) => {
                                                     newItem?.value == 1
                                                       ? 'Low'
                                                       : newItem?.value == 2
-                                                      ? 'Moderate'
-                                                      : newItem?.value == 3
-                                                      ? 'High'
-                                                      : newItem?.value == 4
-                                                      ? 'Very High'
-                                                      : 'None'
+                                                        ? 'Moderate'
+                                                        : newItem?.value == 3
+                                                          ? 'High'
+                                                          : newItem?.value == 4
+                                                            ? 'Very High'
+                                                            : 'None'
                                                   }
                                                   isPollenorSpores={
                                                     newItem.type
@@ -1778,30 +1796,30 @@ const Home = ({navigation}) => {
                                     </ScrollView>
 
                                     {expandedFutureKey === item.key && (
-                                      <View style={{marginTop: 20}}>
+                                      <View style={{ marginTop: 20 }}>
                                         <FlatList
                                           data={futurePollenAndSpores}
-                                          renderItem={({item, index}) => {
+                                          renderItem={({ item, index }) => {
                                             return (
-                                              <View style={{gap: 5}}>
+                                              <View style={{ gap: 5 }}>
                                                 {index ===
                                                   pollenHeaderIndex && (
-                                                  <AppText
-                                                    title="Pollen"
-                                                    textSize={2}
-                                                    textFontWeight
-                                                  />
-                                                )}
+                                                    <AppText
+                                                      title="Pollen"
+                                                      textSize={2}
+                                                      textFontWeight
+                                                    />
+                                                  )}
 
                                                 {index ===
                                                   sporesHeaderIndex && (
-                                                  <AppText
-                                                    title="Spores"
-                                                    textSize={2}
-                                                    marginTop={2}
-                                                    textFontWeight
-                                                  />
-                                                )}
+                                                    <AppText
+                                                      title="Spores"
+                                                      textSize={2}
+                                                      marginTop={2}
+                                                      textFontWeight
+                                                    />
+                                                  )}
 
                                                 <PointPollenSpores
                                                   PollenSporesArr={

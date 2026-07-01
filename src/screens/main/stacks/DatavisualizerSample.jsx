@@ -61,8 +61,11 @@ import {useFocusEffect} from '@react-navigation/native';
 import Svg, {Circle, G, Line, Polyline, Rect} from 'react-native-svg';
 import SvgDashLine from '../../../components/SvgDashLine';
 
+const colours = ['#FF9999', '#66B2FF', '#99FF66', '#FFD966', '#CC99FF'];
+
 const DatavisualizerSample = ({navigation}) => {
   const dispatch = useDispatch();
+  const saveTimeoutRef = useRef(null);
 
   const userData = useSelector(state => state?.auth?.user);
   const isExpired = useSelector(state => state?.auth?.isExpired);
@@ -95,8 +98,6 @@ const DatavisualizerSample = ({navigation}) => {
   const [selecteddate, setSelectedDate] = useState(
     moment().local().format('YYYY-MM-DD'),
   );
-
-  const colours = ['#FF9999', '#66B2FF', '#99FF66', '#FFD966', '#CC99FF'];
 
   const [open, setOpen] = useState(false);
 
@@ -139,11 +140,11 @@ const DatavisualizerSample = ({navigation}) => {
     });
 
     return nav;
-  }, [navigation]);
+  }, [navigation, getAllAllergens, activeCity, NewActiveCity]);
 
   useEffect(() => {
     getSelectedAllergens(activeCity);
-  }, [activeCity, MedicationnRecord, allActiveMedicationRedux]);
+  }, [activeCity, MedicationnRecord, allActiveMedicationRedux, getSelectedAllergens]);
 
   useFocusEffect(
     useCallback(() => {
@@ -225,13 +226,13 @@ const DatavisualizerSample = ({navigation}) => {
         getDataVisualizer(finalActiveCity);
       };
       loadData();
-    }, [userData?.id]),
+    }, [userData?.id, setAllMedicationToFile, getDataVisualizer, getAllAllergens]),
   );
 
   useFocusEffect(
     useCallback(() => {
       getSelectedAllergens(activeCity);
-    }, [activeCity, allActiveMedicationRedux, MedicationnRecord]),
+    }, [activeCity, getSelectedAllergens]),
   );
 
   // console.log("allActiveMedicationRedux",allActiveMedicationRedux)
@@ -242,7 +243,7 @@ const DatavisualizerSample = ({navigation}) => {
     if (allActiveMedicationRedux.length > 0) {
       getMedicationRecords(selecteddate, allActiveMedicationRedux);
     }
-  }, [allActiveMedicationRedux]);
+  }, [allActiveMedicationRedux, selecteddate, getMedicationRecords]);
 
   useEffect(() => {
     // getSelectedAllergens(activeCity);
@@ -250,9 +251,9 @@ const DatavisualizerSample = ({navigation}) => {
     if (type == 'medication') {
       getMedicationApi();
     }
-  }, [selecteddate, activeCity]);
+  }, [selecteddate, activeCity, type, getMedicationApi]);
 
-  const NewActiveCity = cities => {
+  const NewActiveCity = useCallback(cities => {
     const list = cities || AllCities;
     if (!activeCity && list.length > 0) {
       setActiveCityLocal(list[0]);
@@ -260,7 +261,7 @@ const DatavisualizerSample = ({navigation}) => {
     } else {
       console.log('active city exists or no cities');
     }
-  };
+  }, [AllCities, activeCity]);
 
   const getMedApiDataAndSaveToFile = async (currentMeds, activeMeds) => {
     const currentDate = moment().local().format('YYYY-MM-DD');
@@ -315,7 +316,7 @@ const DatavisualizerSample = ({navigation}) => {
     }
   };
 
-  const setAllMedicationToFile = async (currentMeds, activeMeds) => {
+  const setAllMedicationToFile = useCallback(async (currentMeds, activeMeds) => {
     const currentDate = moment().local().format('YYYY-MM-DD');
 
     if (activeMeds.length > 0) {
@@ -371,9 +372,9 @@ const DatavisualizerSample = ({navigation}) => {
       setAllActiveMedicationRedux(toAdd);
       await saveActiveMedications(toAdd);
     }
-  };
+  }, []);
 
-  const getAllAllergens = () => {
+  const getAllAllergens = useCallback(() => {
     setType('allergens');
     setActiveDate(null);
     setPollenLoader(true);
@@ -402,9 +403,9 @@ const DatavisualizerSample = ({navigation}) => {
         console.log(error);
         setPollenLoader(false);
       });
-  };
+  }, [userData]);
 
-  const getMedicationApi = () => {
+  const getMedicationApi = useCallback(() => {
     setType('medication');
     setPollenLoader(true);
 
@@ -442,7 +443,7 @@ const DatavisualizerSample = ({navigation}) => {
         setPollenLoader(false);
         console.log(error);
       });
-  };
+  }, [selecteddate, userData?.id]);
 
   // working ********
   // const getMedicationRecords = (ewformateddate, allActiveMedicationRedux) => {
@@ -509,7 +510,7 @@ const DatavisualizerSample = ({navigation}) => {
 
   // console.log("medicationRecord",MedicationnRecord)
 
-  const getMedicationRecords = (ewformateddate, allActiveMedicationRedux) => {
+  const getMedicationRecords = useCallback((ewformateddate, allActiveMedicationRedux) => {
     if (!allActiveMedicationRedux || allActiveMedicationRedux.length === 0) {
       setMedicationnRecord([]);
       return;
@@ -538,25 +539,28 @@ const DatavisualizerSample = ({navigation}) => {
     });
 
     // ✅ Ab proper grouped structure banao
-    const barData = Object.keys(grouped).map(date => {
-      const group = grouped[date];
-      const formattedLabel = moment(date, 'YYYY-MM-DD').format('D');
+    const barData = Object.keys(grouped)
+      .sort((a, b) => a.localeCompare(b))
+      .map(date => {
+        const group = grouped[date];
+        const formattedLabel = moment(date, 'YYYY-MM-DD').format('D');
 
-      return {
-        label: formattedLabel,
-        meds: group.map((entry, idx) => ({
-          value: parseInt(entry.units) || 0,
-          spacing: idx === group.length - 1 ? 30 : 0,
-          frontColor: entry.frontColor || '#E23131',
-          labelWidth: 30,
-        })),
-      };
-    });
+        return {
+          date: date,
+          label: formattedLabel,
+          meds: group.map((entry, idx) => ({
+            value: parseInt(entry.units) || 0,
+            spacing: idx === group.length - 1 ? 30 : 0,
+            frontColor: entry.frontColor || '#E23131',
+            labelWidth: 30,
+          })),
+        };
+      });
 
     setMedicationnRecord(barData);
-  };
+  }, []);
 
-  const getDataVisualizer = async (selecallergens, city) => {
+  const getDataVisualizer = useCallback(async (selecallergens, city) => {
     // console.log("city ? city : AllCities[0]", city ? city : AllCities[0])
 
     // console.log("city",city)
@@ -661,28 +665,34 @@ const DatavisualizerSample = ({navigation}) => {
         const ambrosiaData = buildLineData(
           chartLineData[first?.allergen_name],
           MedicationnRecord,
+          apiData.dates,
         );
         const miscData = buildLineData(
           chartLineData[second?.allergen_name],
           MedicationnRecord,
+          apiData.dates,
         );
         // new
         const FRAXINUSData = buildLineData(
           chartLineData[third?.allergen_name],
           MedicationnRecord,
+          apiData.dates,
         );
         const HELICOMYCESData = buildLineData(
           chartLineData[fourth?.allergen_name],
           MedicationnRecord,
+          apiData.dates,
         );
         const MISCELLANEOUSData = buildLineData(
           chartLineData[fifth?.allergen_name],
           MedicationnRecord,
+          apiData.dates,
         );
 
         const getSymtomsData = buildSymtomsData(
           apiData.symptom_level,
           MedicationnRecord,
+          apiData.dates,
         );
 
         // setAllSymtoms(apiData.symptom_level);
@@ -718,25 +728,23 @@ const DatavisualizerSample = ({navigation}) => {
     // } else {
     //   console.log('add city');
     // }
-  };
+  }, [AllCities, activeCity, activeCityLocalState, allActiveMedicationRedux, MedicationnRecord, userData?.id]);
 
-  const buildLineData = (pollenArray, medicationRecord) => {
+  const buildLineData = (pollenArray, medicationRecord, apiDates) => {
     const lineData = [];
-    let pollenIndex = 0;
     let currentDateMeds = 0;
 
     medicationRecord.forEach(bar => {
       currentDateMeds++;
 
       if (bar.label) {
-        // ✅ New date ka point banate hain
-        if (pollenArray && pollenArray[pollenIndex] !== undefined) {
+        const idx = apiDates ? apiDates.indexOf(bar.date) : -1;
+        if (idx !== -1 && pollenArray && pollenArray[idx] !== undefined) {
           lineData.push({
-            value: pollenArray[pollenIndex].value, // 👈 yaha .value add karo
-            spacing: currentDateMeds == 1 ? 0 : currentDateMeds, // meds count for this date
+            value: pollenArray[idx].value,
+            spacing: currentDateMeds == 1 ? 0 : currentDateMeds,
           });
         }
-        pollenIndex++;
         currentDateMeds = 0; // reset counter for next date
       }
     });
@@ -744,23 +752,21 @@ const DatavisualizerSample = ({navigation}) => {
     return lineData;
   };
 
-  const buildSymtomsData = (pollenArray, medicationRecord) => {
+  const buildSymtomsData = (pollenArray, medicationRecord, apiDates) => {
     const lineData = [];
-    let pollenIndex = 0;
     let currentDateMeds = 0;
 
     medicationRecord.forEach(bar => {
       currentDateMeds++;
 
       if (bar.label) {
-        // ✅ New date ka point banate hain
-        if (pollenArray && pollenArray[pollenIndex] !== undefined) {
+        const idx = apiDates ? apiDates.indexOf(bar.date) : -1;
+        if (idx !== -1 && pollenArray && pollenArray[idx] !== undefined) {
           lineData.push({
-            value: pollenArray[pollenIndex], // 👈 yaha .value add karo
-            spacing: currentDateMeds == 1 ? 0 : currentDateMeds, // meds count for this date
+            value: pollenArray[idx],
+            spacing: currentDateMeds == 1 ? 0 : currentDateMeds,
           });
         }
-        pollenIndex++;
         currentDateMeds = 0; // reset counter for next date
       }
     });
@@ -812,7 +818,7 @@ const DatavisualizerSample = ({navigation}) => {
       });
   };
 
-  const getSelectedAllergens = city => {
+  const getSelectedAllergens = useCallback(city => {
     // setActiveDate(null)
 
     let config = {
@@ -845,7 +851,7 @@ const DatavisualizerSample = ({navigation}) => {
       .catch(error => {
         console.log(error);
       });
-  };
+  }, [userData?.id, getDataVisualizer]);
 
   const deleteAllergens = async item => {
     setLoadingItemId(item.id);
@@ -893,6 +899,35 @@ const DatavisualizerSample = ({navigation}) => {
       // setLoadingItemId(null);
     }
   };
+
+  const SaveMedicationDataInApi = useCallback(async allActiveMedicationRedux => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(async () => {
+      const AllActiveArray = allActiveMedicationRedux.map(res => ({
+        date: res.date,
+        units: res.units,
+        medication_id: res.id,
+      }));
+
+      if (AllActiveArray.length > 0) {
+        try {
+          await ApiCallWithUserId(
+            'post',
+            'update_medication_units',
+            userData?.id,
+            { data: AllActiveArray },
+          );
+          console.log('Medication data saved successfully to API');
+          saveActiveMedications(allActiveMedicationRedux);
+        } catch (error) {
+          console.log('Error saving medication data:', error);
+        }
+      }
+    }, 1000); // 1 second debounce
+  }, [userData?.id]);
 
   const addMedication = async item => {
     const medID = item.medication_id || item.id;
